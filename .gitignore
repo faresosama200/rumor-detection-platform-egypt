@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+fake-news-backend/node_modules/
+
+# Build output
+frontend/dist/
+frontend/build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+fake-news-backend/.env
+frontend/.env.local
+
+# Uploaded files
+fake-news-backend/uploads/*
+!fake-news-backend/uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+check_db.js

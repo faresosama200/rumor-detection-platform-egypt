@@ -1,0 +1,40 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "db-init-utf8-fix",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"fake-news-backend/database.js"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "backend-start",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"start"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "backend-start",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"fake-news-backend",
+				"start"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "backend-start-fixed",
+			"type": "shell",
+			"command": "cd fake-news-backend; npm start",
+			"isBackground": true
+		}
+	]
+}
