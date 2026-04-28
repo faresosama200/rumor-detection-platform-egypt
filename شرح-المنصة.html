@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>توثيق منصة مكافحة الشائعات</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',Arial,sans-serif;background:#fff;color:#1a1a2e;direction:rtl;font-size:13px;line-height:1.7}
+.page{max-width:210mm;margin:0 auto;padding:15mm 18mm;background:#fff}
+h1{font-size:26px;color:#0a1628;font-weight:900;margin-bottom:6px}
+h2{font-size:18px;color:#1565c0;font-weight:700;margin:28px 0 10px;padding-bottom:5px;border-bottom:2px solid #e3f2fd}
+h3{font-size:15px;color:#0d47a1;font-weight:700;margin:18px 0 8px}
+h4{font-size:13px;color:#1565c0;font-weight:600;margin:12px 0 6px}
+p{margin-bottom:8px}
+ul,ol{padding-right:20px;margin-bottom:10px}
+li{margin-bottom:4px}
+code{background:#f0f4f8;color:#c0392b;padding:1px 6px;border-radius:4px;font-family:'Courier New',monospace;font-size:11px}
+pre{background:#0d1117;color:#e6edf3;padding:14px;border-radius:8px;overflow-x:auto;font-size:11px;line-height:1.6;margin:10px 0;font-family:'Courier New',monospace}
+pre .comment{color:#7d8590}
+pre .string{color:#a5d6ff}
+pre .keyword{color:#ff7b72}
+pre .func{color:#d2a8ff}
+table{width:100%;border-collapse:collapse;margin:10px 0 18px;font-size:12px}
+th{background:#1565c0;color:#fff;padding:8px 10px;text-align:right;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #e0e7ef;vertical-align:top}
+tr:nth-child(even) td{background:#f8fafc}
+.cover{text-align:center;padding:40px 0 30px;border-bottom:3px solid #1565c0;margin-bottom:30px}
+.cover .badge{background:#e3f2fd;color:#1565c0;padding:4px 14px;border-radius:20px;font-size:12px;display:inline-block;margin:4px 3px}
+.cover .logo{font-size:52px;margin-bottom:12px}
+.cover .subtitle{color:#546e7a;font-size:15px;margin-top:6px}
+.cover .meta{margin-top:16px;font-size:12px;color:#78909c}
+.toc{background:#f8fafc;border:1px solid #e0e7ef;border-radius:8px;padding:16px 20px;margin:20px 0}
+.toc h3{color:#1565c0;margin-bottom:10px}
+.toc ol{padding-right:20px}
+.toc li{padding:2px 0;font-size:13px}
+.toc a{color:#1565c0;text-decoration:none}
+.highlight{background:#fff8e1;border-right:4px solid #f9a825;padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:12px}
+.info-box{background:#e3f2fd;border-right:4px solid #1565c0;padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:12px}
+.success-box{background:#e8f5e9;border-right:4px solid #43a047;padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:12px}
+.warning-box{background:#fff3e0;border-right:4px solid #f57c00;padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:12px}
+.section-badge{background:#1565c0;color:#fff;font-size:11px;padding:2px 10px;border-radius:12px;display:inline-block;margin-bottom:8px}
+.card-row{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap}
+.mini-card{background:#f8fafc;border:1px solid #dde5ef;border-radius:8px;padding:12px;flex:1;min-width:160px}
+.mini-card .icon{font-size:22px;margin-bottom:6px}
+.mini-card strong{display:block;font-size:12px;color:#1565c0;margin-bottom:3px}
+.mini-card span{font-size:11px;color:#546e7a}
+.route-badge{background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:4px;font-size:11px;font-family:monospace}
+.method{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;font-family:monospace;margin-left:4px}
+.get{background:#e3f2fd;color:#1565c0}
+.post{background:#e8f5e9;color:#2e7d32}
+.put{background:#fff8e1;color:#f57c00}
+.delete{background:#ffebee;color:#c62828}
+.footer{text-align:center;margin-top:40px;padding-top:16px;border-top:1px solid #e0e7ef;color:#78909c;font-size:11px}
+@media print{
+  body{font-size:12px}
+  .page{padding:10mm 14mm;max-width:100%}
+  pre{page-break-inside:avoid}
+  h2{page-break-before:auto}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- COVER -->
+<div class="cover">
+  <div class="logo">🛡️</div>
+  <h1>منصة مكافحة الشائعات</h1>
+  <p class="subtitle">حروب الجيل الرابع — مصر</p>
+  <div style="margin-top:12px">
+    <span class="badge">Node.js</span><span class="badge">React</span><span class="badge">MySQL</span>
+    <span class="badge">Gemini AI</span><span class="badge">Railway</span><span class="badge">Vercel</span>
+  </div>
+  <div class="meta">
+    <strong>توثيق المشروع الكامل</strong><br/>
+    الإصدار 1.0 — إبريل 2026<br/>
+    الموقع: <code>https://frontend-nine-beige-13.vercel.app</code><br/>
+    Backend: <code>https://backend-production-03bc.up.railway.app</code>
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h3>📋 فهرس المحتويات</h3>
+  <ol>
+    <li><a href="#overview">نظرة عامة على المشروع وأهميته</a></li>
+    <li><a href="#architecture">هيكل المشروع والمعمارية</a></li>
+    <li><a href="#languages">اللغات والتقنيات المستخدمة</a></li>
+    <li><a href="#pages">صفحات الموقع ووظيفة أيقوناتها</a></li>
+    <li><a href="#backend">الـ Backend — API Endpoints</a></li>
+    <li><a href="#database">قاعدة البيانات — جداول ومزامنة</a></li>
+    <li><a href="#ai">الذكاء الاصطناعي — Gemini Integration</a></li>
+    <li><a href="#auth">نظام المصادقة والصلاحيات</a></li>
+    <li><a href="#deploy">النشر والبنية التحتية</a></li>
+    <li><a href="#envvars">المتغيرات البيئية</a></li>
+    <li><a href="#files">هيكل الملفات الكامل</a></li>
+    <li><a href="#admin">دليل المشرف</a></li>
+  </ol>
+</div>
+
+<!-- 1. OVERVIEW -->
+<h2 id="overview">1. نظرة عامة على المشروع وأهميته</h2>
+
+<p>
+منصة مكافحة الشائعات هي تطبيق ويب متكامل تم تطويره لمواجهة ظاهرة الأخبار الزائفة والمعلومات المضللة في المجتمع المصري والعربي، خاصةً في إطار ما يُعرف بـ <strong>"حروب الجيل الرابع"</strong> — وهي الحروب الإعلامية والمعلوماتية التي تستهدف إضعاف المجتمعات من الداخل عبر نشر الذعر، التفرقة، وتشويه الحقائق.
+</p>
+
+<div class="info-box">
+  <strong>💡 أهمية المشروع:</strong><br/>
+  تُشير الإحصاءات إلى أن 68% من مستخدمي الإنترنت في مصر يتعرضون لأخبار زائفة يومياً عبر وسائل التواصل الاجتماعي. هذه المنصة توفر أداة مجتمعية وتقنية لمواجهة هذه الظاهرة بالتحليل الذكي والتوعية.
+</div>
+
+<h3>الأهداف الرئيسية للمنصة:</h3>
+<ul>
+  <li>🔍 <strong>التحقق الآلي</strong> — تحليل الأخبار والشائعات باستخدام Gemini AI لتحديد مصداقيتها فورياً</li>
+  <li>📢 <strong>الإبلاغ المجتمعي</strong> — تمكين المواطنين من الإبلاغ عن الشائعات التي يتعرضون لها</li>
+  <li>📰 <strong>التوعية والتثقيف</strong> — نشر مقالات ومحتوى توعوي حول كيفية التعرف على الأخبار الزائفة</li>
+  <li>🎬 <strong>الفيديوهات التوعوية</strong> — عرض مقاطع فيديو من YouTube وFacebook وTikTok لنشر الوعي</li>
+  <li>🤖 <strong>المساعد الذكي</strong> — محادثة مباشرة مع Gemini AI للاستشارة حول أي خبر أو معلومة</li>
+  <li>⚙️ <strong>لوحة إدارة</strong> — تحكم كامل للمشرفين في المحتوى والمستخدمين والبلاغات</li>
+</ul>
+
+<div class="card-row">
+  <div class="mini-card"><div class="icon">👥</div><strong>المستخدمون</strong><span>مواطنون يريدون التحقق من الأخبار</span></div>
+  <div class="mini-card"><div class="icon">👮</div><strong>المراجعون</strong><span>متخصصون يراجعون البلاغات</span></div>
+  <div class="mini-card"><div class="icon">⚙️</div><strong>المشرفون</strong><span>إدارة كاملة للمنصة</span></div>
+  <div class="mini-card"><div class="icon">🤖</div><strong>Gemini AI</strong><span>تحليل ذكي تلقائي</span></div>
+</div>
+
+<!-- 2. ARCHITECTURE -->
+<h2 id="architecture">2. هيكل المشروع والمعمارية</h2>
+
+<p>المشروع يعتمد نمط <strong>Full-Stack Web Application</strong> مع فصل كامل بين الـ Frontend والـ Backend:</p>
+
+<pre>
+<span class="comment">منصة-مكافحة-الشائعات/</span>
+├── fake-news-backend/          <span class="comment"># الخادم الخلفي (Node.js)</span>
+│   ├── index.js                <span class="comment"># نقطة الدخول الرئيسية + جميع API Routes</span>
+│   ├── database.js             <span class="comment"># إنشاء جداول قاعدة البيانات + بيانات أولية</span>
+│   ├── connection.js           <span class="comment"># اتصال MySQL pool</span>
+│   ├── package.json            <span class="comment"># تبعيات Node.js</span>
+│   ├── Dockerfile              <span class="comment"># للنشر على Railway</span>
+│   ├── railway.json            <span class="comment"># إعدادات Railway</span>
+│   ├── .env                    <span class="comment"># متغيرات البيئة المحلية</span>
+│   └── uploads/                <span class="comment"># ملفات مرفوعة (أدلة بلاغات)</span>
+│
+├── frontend/                   <span class="comment"># الواجهة الأمامية (React + Vite)</span>
+│   ├── src/
+│   │   ├── main.jsx            <span class="comment"># نقطة الدخول React</span>
+│   │   ├── App.jsx             <span class="comment"># التطبيق الرئيسي + التنقل + Hamburger Menu</span>
+│   │   ├── api.js              <span class="comment"># Axios instance + endpoints</span>
+│   │   ├── auth.jsx            <span class="comment"># AuthContext (تسجيل دخول/خروج)</span>
+│   │   ├── styles.css          <span class="comment"># تصميم كامل للموقع (RTL + Dark Theme)</span>
+│   │   ├── Login.jsx           <span class="comment"># صفحة الدخول</span>
+│   │   ├── Register.jsx        <span class="comment"># صفحة التسجيل</span>
+│   │   ├── ReportPage.jsx      <span class="comment"># صفحة الإبلاغ عن شائعة</span>
+│   │   ├── ArticlesData.jsx    <span class="comment"># صفحة عرض المقالات</span>
+│   │   ├── VideoAwareness.jsx  <span class="comment"># صفحة فيديوهات التوعية</span>
+│   │   ├── AdvancedAIDetection.jsx  <span class="comment"># صفحة التحقق بالذكاء الاصطناعي</span>
+│   │   ├── AIChat.jsx          <span class="comment"># صفحة الدردشة مع Gemini AI</span>
+│   │   ├── AdminDashboard.jsx  <span class="comment"># لوحة تحكم المشرف</span>
+│   │   ├── AdminArticles.jsx   <span class="comment"># إدارة المقالات (CRUD كامل)</span>
+│   │   ├── contentSettings.js  <span class="comment"># إعدادات المحتوى (localStorage)</span>
+│   │   ├── ErrorBoundary.jsx   <span class="comment"># معالجة الأخطاء</span>
+│   │   ├── LoadingSpinner.jsx  <span class="comment"># مؤشر التحميل</span>
+│   │   └── Notifications.jsx   <span class="comment"># نظام الإشعارات</span>
+│   ├── index.html              <span class="comment"># HTML الأساسي</span>
+│   ├── vite.config.js          <span class="comment"># إعدادات Vite</span>
+│   ├── package.json            <span class="comment"># تبعيات React</span>
+│   └── vercel.json             <span class="comment"># SPA rewrite لـ Vercel</span>
+│
+├── vercel.json                 <span class="comment"># إعدادات Vercel على مستوى المشروع</span>
+└── README.md
+</pre>
+
+<h3>نمط المعمارية (Architecture Pattern):</h3>
+<div class="card-row">
+  <div class="mini-card"><div class="icon">🌐</div><strong>SPA</strong><span>Single Page Application بدون إعادة تحميل</span></div>
+  <div class="mini-card"><div class="icon">🔄</div><strong>REST API</strong><span>اتصال Frontend/Backend عبر HTTP/JSON</span></div>
+  <div class="mini-card"><div class="icon">🔐</div><strong>JWT Auth</strong><span>توكنات مشفرة للمصادقة</span></div>
+  <div class="mini-card"><div class="icon">☁️</div><strong>Cloud Deploy</strong><span>Railway + Vercel لنشر مستمر</span></div>
+</div>
+
+<!-- 3. LANGUAGES -->
+<h2 id="languages">3. اللغات والتقنيات المستخدمة</h2>
+
+<table>
+  <tr><th>الطبقة</th><th>التقنية</th><th>الإصدار</th><th>الغرض</th></tr>
+  <tr><td><strong>Frontend</strong></td><td>React</td><td>18.2</td><td>بناء واجهة المستخدم التفاعلية</td></tr>
+  <tr><td></td><td>JavaScript (JSX)</td><td>ES2022</td><td>لغة البرمجة الأساسية للواجهة</td></tr>
+  <tr><td></td><td>Vite</td><td>5.4</td><td>أداة البناء والتطوير السريع</td></tr>
+  <tr><td></td><td>React Router DOM</td><td>6.20</td><td>التنقل بين الصفحات (SPA)</td></tr>
+  <tr><td></td><td>Axios</td><td>1.6</td><td>طلبات HTTP للـ Backend</td></tr>
+  <tr><td></td><td>Bootstrap RTL</td><td>5.3</td><td>تصميم متجاوب للعربية</td></tr>
+  <tr><td></td><td>CSS3</td><td>—</td><td>تصميم مخصص (Dark Theme + RTL)</td></tr>
+  <tr><td><strong>Backend</strong></td><td>Node.js</td><td>18+</td><td>بيئة تشغيل JavaScript على الخادم</td></tr>
+  <tr><td></td><td>Express.js</td><td>4.18</td><td>إطار عمل HTTP/API</td></tr>
+  <tr><td></td><td>JavaScript (CJS)</td><td>ES2022</td><td>لغة البرمجة للـ Backend</td></tr>
+  <tr><td></td><td>mysql2</td><td>3.x</td><td>اتصال بقاعدة البيانات MySQL</td></tr>
+  <tr><td></td><td>bcryptjs</td><td>2.x</td><td>تشفير كلمات المرور</td></tr>
+  <tr><td></td><td>jsonwebtoken</td><td>9.x</td><td>إنشاء والتحقق من JWT</td></tr>
+  <tr><td></td><td>multer</td><td>1.x</td><td>رفع الملفات (أدلة البلاغات)</td></tr>
+  <tr><td></td><td>cors</td><td>2.x</td><td>السماح بطلبات Cross-Origin</td></tr>
+  <tr><td></td><td>dotenv</td><td>16.x</td><td>قراءة المتغيرات البيئية</td></tr>
+  <tr><td><strong>Database</strong></td><td>MySQL</td><td>8.0</td><td>قاعدة البيانات العلائقية الرئيسية</td></tr>
+  <tr><td></td><td>Railway MySQL</td><td>—</td><td>استضافة قاعدة البيانات في السحابة</td></tr>
+  <tr><td><strong>AI</strong></td><td>Google Gemini 1.5 Flash</td><td>—</td><td>تحليل الأخبار والدردشة الذكية</td></tr>
+  <tr><td><strong>DevOps</strong></td><td>Railway</td><td>—</td><td>استضافة وتشغيل الـ Backend</td></tr>
+  <tr><td></td><td>Vercel</td><td>—</td><td>استضافة وبناء الـ Frontend</td></tr>
+  <tr><td></td><td>GitHub</td><td>—</td><td>مستودع الكود + CI/CD</td></tr>
+  <tr><td></td><td>Docker</td><td>—</td><td>حاوية لتشغيل الـ Backend</td></tr>
+</table>
+
+<!-- 4. PAGES & ICONS -->
+<h2 id="pages">4. صفحات الموقع ووظيفة أيقوناتها</h2>
+
+<h3>شريط التنقل (Navigation Bar)</h3>
+<p>الشريط يظهر في أعلى كل صفحة ويتحول إلى <strong>قائمة Hamburger ☰</strong> على الشاشات الصغيرة (موبايل).</p>
+
+<table>
+  <tr><th>الأيقونة</th><th>النص</th><th>المسار (Route)</th><th>الوصول</th><th>الوظيفة</th></tr>
+  <tr><td>📢</td><td>إبلاغ</td><td><code>/report</code></td><td>مسجل دخول</td><td>صفحة الإبلاغ عن شائعة جديدة</td></tr>
+  <tr><td>📰</td><td>مقالات</td><td><code>/articles</code></td><td>مسجل دخول</td><td>قراءة مقالات التوعية من قاعدة البيانات</td></tr>
+  <tr><td>🔍</td><td>تحقق AI</td><td><code>/ai-detect</code></td><td>مسجل دخول</td><td>تحليل نص بالذكاء الاصطناعي</td></tr>
+  <tr><td>🤖</td><td>دردشة AI</td><td><code>/ai-chat</code></td><td>مسجل دخول</td><td>محادثة تفاعلية مع Gemini</td></tr>
+  <tr><td>🎬</td><td>فيديوهات</td><td><code>/videos</code></td><td>مسجل دخول</td><td>عرض فيديوهات توعوية من يوتيوب وغيره</td></tr>
+  <tr><td>⚙️</td><td>لوحة التحكم</td><td><code>/admin</code></td><td>مشرف فقط</td><td>إحصائيات ومراجعة البلاغات</td></tr>
+  <tr><td>📝</td><td>المقالات</td><td><code>/admin-articles</code></td><td>مشرف فقط</td><td>إضافة وتعديل وحذف المقالات</td></tr>
+  <tr><td>🔐</td><td>دخول</td><td><code>/login</code></td><td>غير مسجل</td><td>نموذج تسجيل الدخول</td></tr>
+  <tr><td>📝</td><td>تسجيل</td><td><code>/register</code></td><td>غير مسجل</td><td>إنشاء حساب جديد</td></tr>
+  <tr><td>🚪</td><td>خروج</td><td>—</td><td>مسجل دخول</td><td>تسجيل الخروج ومسح التوكن</td></tr>
+</table>
+
+<h3>شرح كل صفحة بالتفصيل:</h3>
+
+<h4>📢 صفحة الإبلاغ — <code>/report</code></h4>
+<ul>
+  <li>نموذج يتضمن: العنوان، التفاصيل، رابط المصدر، التصنيف (صحة/سياسة/اقتصاد/أمن/دين/عام)، الوسوم</li>
+  <li>يرسل البيانات إلى <code>POST /api/reports</code></li>
+  <li>يدعم رفع ملفات كأدلة (صور، PDF) — حتى 5 ملفات × 10MB</li>
+  <li>يظهر رسالة نجاح خضراء بعد الإرسال</li>
+</ul>
+
+<h4>📰 صفحة المقالات — <code>/articles</code></h4>
+<ul>
+  <li>تجلب المقالات من <code>GET /api/articles</code> في الوقت الفعلي</li>
+  <li>بحث فوري في العنوان والمحتوى</li>
+  <li>عرض بطاقات Grid تحتوي: الفئة، العنوان، مقتطف، المؤلف، التاريخ</li>
+</ul>
+
+<h4>🔍 صفحة التحقق AI — <code>/ai-detect</code></h4>
+<ul>
+  <li>حقل نصي لإدخال الخبر أو الشائعة</li>
+  <li>يرسل إلى <code>POST /api/verify-ai</code></li>
+  <li>يعرض: نسبة المصداقية (0-100%)، حكم (صحيح/مشبوه/شائعة)، ملخص، أسباب</li>
+  <li>إذا توفر GEMINI_API_KEY: تحليل حقيقي بـ Google Gemini 1.5 Flash</li>
+  <li>إذا لم يتوفر: تحليل محلي بناءً على كلمات الشك</li>
+</ul>
+
+<h4>🤖 صفحة الدردشة AI — <code>/ai-chat</code></h4>
+<ul>
+  <li>واجهة دردشة تفاعلية مثل WhatsApp</li>
+  <li>يرسل رسائل إلى <code>POST /api/ai-chat</code></li>
+  <li>Gemini يجيب بالعربية عن أي سؤال يخص الشائعات والمعلومات المضللة</li>
+  <li>يحفظ سجل المحادثة خلال الجلسة الواحدة</li>
+</ul>
+
+<h4>🎬 صفحة الفيديوهات — <code>/videos</code></h4>
+<ul>
+  <li>يجلب الفيديوهات من <code>GET /api/videos</code></li>
+  <li>YouTube: يعرض Player مدمج iframe مباشرة</li>
+  <li>Facebook / TikTok / أخرى: زر للانتقال إلى الرابط</li>
+  <li>المشرف فقط: يرى زر "+ إضافة فيديو" + زر "حذف" على كل فيديو</li>
+</ul>
+
+<h4>⚙️ لوحة التحكم — <code>/admin</code></h4>
+<ul>
+  <li>4 بطاقات إحصاء: إجمالي البلاغات، قيد المراجعة، المقالات، المصادر</li>
+  <li>جدول أحدث 5 بلاغات مع حالتها</li>
+  <li>يجلب من <code>GET /api/dashboard</code> و <code>GET /api/reports</code></li>
+</ul>
+
+<h4>📝 إدارة المقالات — <code>/admin-articles</code></h4>
+<ul>
+  <li>CRUD كامل: إضافة / تعديل / حذف المقالات</li>
+  <li>حقول: العنوان، المحتوى، الفئة، الوسوم، حالة النشر</li>
+  <li>جدول بجميع المقالات مع إجراءات لكل صف</li>
+</ul>
+
+<!-- 5. BACKEND API -->
+<h2 id="backend">5. الـ Backend — API Endpoints</h2>
+
+<div class="info-box">
+  Base URL: <code>https://backend-production-03bc.up.railway.app</code><br/>
+  جميع الـ endpoints المحمية تتطلب Header: <code>Authorization: Bearer &lt;JWT_TOKEN&gt;</code>
+</div>
+
+<h3>🔓 عام (لا يحتاج توكن)</h3>
+<table>
+  <tr><th>الطريقة</th><th>المسار</th><th>الوظيفة</th></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/</code></td><td>فحص تشغيل الـ API</td></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/api/health</code></td><td>فحص صحة الخادم + timestamp</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/api/register</code></td><td>تسجيل مستخدم جديد (name, email, password)</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/api/login</code></td><td>تسجيل الدخول — يُرجع JWT token</td></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/api/articles</code></td><td>جلب المقالات المنشورة</td></tr>
+</table>
+
+<h3>🔐 يحتاج توكن (مستخدم مسجل)</h3>
+<table>
+  <tr><th>الطريقة</th><th>المسار</th><th>الوظيفة</th></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/api/reports</code></td><td>جلب البلاغات (فلترة: status, category, page, limit)</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/api/reports</code></td><td>إرسال بلاغ جديد + رفع ملفات أدلة</td></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/api/reports/:id</code></td><td>تفاصيل بلاغ واحد + ملفات الأدلة</td></tr>
+  <tr><td><span class="method put">PUT</span></td><td><code>/api/reports/:id</code></td><td>تحديث حالة البلاغ (pending/true/false)</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/api/verify-ai</code></td><td>تحليل نص بـ Gemini AI</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/api/ai-chat</code></td><td>محادثة مع Gemini AI</td></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/api/videos</code></td><td>جلب قائمة الفيديوهات التوعوية</td></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/api/sources</code></td><td>جلب المصادر الموثوقة</td></tr>
+</table>
+
+<h3>👑 يحتاج صلاحية مشرف (admin)</h3>
+<table>
+  <tr><th>الطريقة</th><th>المسار</th><th>الوظيفة</th></tr>
+  <tr><td><span class="method delete">DELETE</span></td><td><code>/api/reports/:id</code></td><td>حذف بلاغ</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/api/articles</code></td><td>إضافة مقال جديد</td></tr>
+  <tr><td><span class="method put">PUT</span></td><td><code>/api/articles/:id</code></td><td>تعديل مقال</td></tr>
+  <tr><td><span class="method delete">DELETE</span></td><td><code>/api/articles/:id</code></td><td>حذف مقال</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/api/videos</code></td><td>إضافة فيديو توعوي</td></tr>
+  <tr><td><span class="method delete">DELETE</span></td><td><code>/api/videos/:id</code></td><td>حذف فيديو</td></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/api/dashboard</code></td><td>إحصائيات لوحة التحكم</td></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/api/admin/users</code></td><td>قائمة جميع المستخدمين</td></tr>
+  <tr><td><span class="method put">PUT</span></td><td><code>/api/admin/users/:id/role</code></td><td>تغيير دور مستخدم</td></tr>
+</table>
+
+<!-- 6. DATABASE -->
+<h2 id="database">6. قاعدة البيانات — جداول ومزامنة البيانات</h2>
+
+<div class="info-box">
+  نوع قاعدة البيانات: <strong>MySQL 8.0</strong> مستضافة على <strong>Railway</strong><br/>
+  اسم قاعدة البيانات: <code>railway</code><br/>
+  Charset: <code>utf8mb4</code> (يدعم العربية والإيموجي)
+</div>
+
+<h3>الجداول وعلاقاتها:</h3>
+
+<h4>1. جدول users — المستخدمون</h4>
+<table>
+  <tr><th>العمود</th><th>النوع</th><th>الوصف</th></tr>
+  <tr><td>user_id (PK)</td><td>INT AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+  <tr><td>name</td><td>VARCHAR(120)</td><td>الاسم الكامل</td></tr>
+  <tr><td>email</td><td>VARCHAR(160) UNIQUE</td><td>البريد الإلكتروني (فريد)</td></tr>
+  <tr><td>password_hash</td><td>VARCHAR(255)</td><td>كلمة المرور مشفرة بـ bcrypt (10 rounds)</td></tr>
+  <tr><td>role</td><td>ENUM</td><td>user / reviewer / admin / spokesperson</td></tr>
+  <tr><td>created_at</td><td>TIMESTAMP</td><td>تاريخ الإنشاء</td></tr>
+</table>
+
+<h4>2. جدول reports — البلاغات</h4>
+<table>
+  <tr><th>العمود</th><th>النوع</th><th>الوصف</th></tr>
+  <tr><td>report_id (PK)</td><td>INT AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+  <tr><td>user_id (FK)</td><td>INT → users</td><td>المستخدم الذي أرسل البلاغ</td></tr>
+  <tr><td>title</td><td>VARCHAR(255)</td><td>عنوان الشائعة</td></tr>
+  <tr><td>description</td><td>TEXT</td><td>تفاصيل الشائعة</td></tr>
+  <tr><td>source_url</td><td>VARCHAR(500)</td><td>رابط مصدر الشائعة</td></tr>
+  <tr><td>category</td><td>VARCHAR(120)</td><td>التصنيف (general/health/politics/...)</td></tr>
+  <tr><td>tags</td><td>VARCHAR(255)</td><td>وسوم للبحث</td></tr>
+  <tr><td>status</td><td>ENUM</td><td>pending / true / false</td></tr>
+  <tr><td>admin_notes</td><td>TEXT</td><td>ملاحظات المشرف بعد المراجعة</td></tr>
+  <tr><td>created_at / updated_at</td><td>TIMESTAMP</td><td>تواريخ الإنشاء والتحديث</td></tr>
+</table>
+
+<h4>3. جدول articles — المقالات</h4>
+<table>
+  <tr><th>العمود</th><th>النوع</th><th>الوصف</th></tr>
+  <tr><td>article_id (PK)</td><td>INT AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+  <tr><td>title</td><td>VARCHAR(255)</td><td>عنوان المقال</td></tr>
+  <tr><td>content</td><td>LONGTEXT</td><td>محتوى المقال الكامل</td></tr>
+  <tr><td>category</td><td>VARCHAR(120)</td><td>الفئة (awareness/education/health/...)</td></tr>
+  <tr><td>tags</td><td>VARCHAR(255)</td><td>وسوم البحث</td></tr>
+  <tr><td>is_published</td><td>TINYINT(1)</td><td>1=منشور، 0=مسودة</td></tr>
+  <tr><td>created_by (FK)</td><td>INT → users</td><td>المشرف الكاتب للمقال</td></tr>
+  <tr><td>created_at</td><td>TIMESTAMP</td><td>تاريخ النشر</td></tr>
+</table>
+
+<h4>4. جدول awareness_videos — فيديوهات التوعية</h4>
+<table>
+  <tr><th>العمود</th><th>النوع</th><th>الوصف</th></tr>
+  <tr><td>video_id (PK)</td><td>INT AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+  <tr><td>title</td><td>VARCHAR(255)</td><td>عنوان الفيديو</td></tr>
+  <tr><td>description</td><td>TEXT</td><td>وصف الفيديو</td></tr>
+  <tr><td>video_url</td><td>VARCHAR(500)</td><td>رابط الفيديو (YouTube/Facebook/TikTok)</td></tr>
+  <tr><td>platform</td><td>ENUM</td><td>youtube / facebook / tiktok / other</td></tr>
+  <tr><td>created_at</td><td>TIMESTAMP</td><td>تاريخ الإضافة</td></tr>
+</table>
+
+<h4>5. جدول report_evidence — أدلة البلاغات</h4>
+<p>يخزن الملفات المرفوعة (صور، PDF) كأدلة لكل بلاغ. علاقة: report_id → reports (CASCADE DELETE)</p>
+
+<h4>6. جدول sources — المصادر الموثوقة</h4>
+<p>قائمة المصادر الإعلامية الموثوقة مع درجة مصداقيتها (credibility_score من 0-100)</p>
+
+<h4>7. جدول verifications — التحقيقات</h4>
+<p>نتائج التحقق من البلاغات من قِبَل المراجعين (verdict: true/false)</p>
+
+<h3>مزامنة البيانات (Data Synchronization):</h3>
+<div class="success-box">
+  <strong>✅ آلية المزامنة في المشروع:</strong><br/>
+  1. كل طلب Frontend يستخدم <strong>Axios Instance</strong> مع <code>baseURL</code> ثابت<br/>
+  2. الـ JWT token يُرسل تلقائياً مع كل طلب عبر <strong>Request Interceptor</strong><br/>
+  3. قاعدة البيانات على Railway تعمل <strong>24/7</strong> مع connection pooling<br/>
+  4. صفحة المقالات والفيديوهات تجلب البيانات في <strong>Real-Time</strong> عند كل زيارة<br/>
+  5. لوحة التحكم تجلب الإحصائيات من الـ API مباشرةً (لا cache محلي للإحصائيات)<br/>
+  6. contentSettings.js تحفظ في <strong>localStorage</strong> وتُزامَن مع واجهة المشرف
+</div>
+
+<!-- 7. AI -->
+<h2 id="ai">7. الذكاء الاصطناعي — Gemini Integration</h2>
+
+<h3>نموذج الذكاء الاصطناعي:</h3>
+<p>المنصة تستخدم <strong>Google Gemini 1.5 Flash</strong> عبر الـ REST API الرسمي من Google.</p>
+
+<h3>التحقق من الشائعات (<code>/api/verify-ai</code>):</h3>
+<p>يُرسل الـ Backend prompt محكم إلى Gemini يطلب منه تحليل النص وإرجاع JSON بـ:</p>
+<ul>
+  <li><code>confidence</code>: نسبة صحة المعلومة (0-100)</li>
+  <li><code>verdict</code>: صحيح / مشبوه / شائعة</li>
+  <li><code>summary</code>: ملخص التحليل بالعربية</li>
+  <li><code>reasons</code>: قائمة أسباب الحكم</li>
+</ul>
+
+<h3>Fallback بدون API Key:</h3>
+<div class="warning-box">
+  إذا لم يُضف <code>GEMINI_API_KEY</code> في Railway، يعمل النظام بـ<strong>تحليل محلي</strong> يبحث عن كلمات مثل: "عاجل"، "خطير"، "انتشار"، "خبر مهم"، إلخ — لكن الدقة محدودة. يُنصح بإضافة المفتاح للحصول على تحليل حقيقي.
+</div>
+
+<h3>الحصول على GEMINI_API_KEY:</h3>
+<ol>
+  <li>افتح <code>https://aistudio.google.com/app/apikey</code></li>
+  <li>اضغط "Create API Key"</li>
+  <li>انسخ المفتاح</li>
+  <li>اذهب إلى Railway → backend service → Variables → أضف: <code>GEMINI_API_KEY = مفتاحك</code></li>
+</ol>
+
+<!-- 8. AUTH -->
+<h2 id="auth">8. نظام المصادقة والصلاحيات</h2>
+
+<h3>تدفق تسجيل الدخول:</h3>
+<pre>
+المستخدم يدخل email + password
+        ↓
+Frontend يرسل POST /api/login
+        ↓
+Backend يتحقق من البريد في DB
+        ↓
+bcrypt.compare(password, hash)
+        ↓
+jwt.sign({ userId, email, role, name }, SECRET, { expiresIn: '7d' })
+        ↓
+يُرجع: { token, role, userId, name }
+        ↓
+Frontend يحفظ في localStorage:
+  token | role | name | userId
+        ↓
+Axios interceptor يضيف تلقائياً:
+  Authorization: Bearer &lt;token&gt;
+</pre>
+
+<h3>مستويات الصلاحيات:</h3>
+<table>
+  <tr><th>الدور</th><th>الصلاحيات</th></tr>
+  <tr><td><strong>user</strong></td><td>تسجيل دخول، إرسال بلاغ، قراءة مقالات، التحقق AI، دردشة AI، مشاهدة فيديوهات</td></tr>
+  <tr><td><strong>reviewer</strong></td><td>كل صلاحيات user + مراجعة البلاغات وتحديث حالتها</td></tr>
+  <tr><td><strong>admin</strong></td><td>كل الصلاحيات + إدارة المقالات، الفيديوهات، المستخدمين، لوحة التحكم الكاملة</td></tr>
+  <tr><td><strong>spokesperson</strong></td><td>دور خاص للمتحدث الرسمي للمراجعة والتعليق</td></tr>
+</table>
+
+<h3>حماية الـ Routes:</h3>
+<ul>
+  <li>Frontend: <code>isAuthenticated</code> يتحقق من وجود token في localStorage</li>
+  <li>Frontend: <code>isAdmin</code> يتحقق أن role === 'admin'</li>
+  <li>Backend: Middleware <code>auth</code> يتحقق من JWT في كل طلب محمي</li>
+  <li>Backend: Middleware <code>admin</code> يتحقق أن role === 'admin'</li>
+</ul>
+
+<!-- 9. DEPLOY -->
+<h2 id="deploy">9. النشر والبنية التحتية</h2>
+
+<div class="card-row">
+  <div class="mini-card"><div class="icon">🚂</div><strong>Railway</strong><span>Backend Node.js + MySQL Database</span></div>
+  <div class="mini-card"><div class="icon">▲</div><strong>Vercel</strong><span>Frontend React + Build تلقائي</span></div>
+  <div class="mini-card"><div class="icon">🐙</div><strong>GitHub</strong><span>مستودع الكود + CI/CD</span></div>
+  <div class="mini-card"><div class="icon">🐳</div><strong>Docker</strong><span>حاوية الـ Backend على Railway</span></div>
+</div>
+
+<h3>روابط النشر:</h3>
+<table>
+  <tr><th>الخدمة</th><th>الرابط</th></tr>
+  <tr><td>الموقع (Frontend)</td><td><code>https://frontend-nine-beige-13.vercel.app</code></td></tr>
+  <tr><td>الـ API (Backend)</td><td><code>https://backend-production-03bc.up.railway.app</code></td></tr>
+  <tr><td>فحص الـ API</td><td><code>https://backend-production-03bc.up.railway.app/api/health</code></td></tr>
+  <tr><td>GitHub</td><td><code>https://github.com/faresosama200/rumor-detection-platform-egypt</code></td></tr>
+</table>
+
+<h3>عملية النشر التلقائي:</h3>
+<ol>
+  <li><code>git push origin main</code> → GitHub يستقبل الكود</li>
+  <li>Vercel يكتشف التغيير تلقائياً → يبني الـ Frontend (<code>npm run build</code>) → ينشر</li>
+  <li><code>railway up --detach</code> → يرفع الكود إلى Railway ويبني الـ Docker image → يشغّل</li>
+</ol>
+
+<!-- 10. ENV -->
+<h2 id="envvars">10. المتغيرات البيئية</h2>
+
+<h3>Backend (Railway Variables):</h3>
+<table>
+  <tr><th>المتغير</th><th>القيمة / الوصف</th><th>مطلوب؟</th></tr>
+  <tr><td><code>MYSQLHOST</code></td><td>عنوان خادم MySQL (يُضاف تلقائياً من Railway)</td><td>✅ تلقائي</td></tr>
+  <tr><td><code>MYSQLPORT</code></td><td>منفذ MySQL (افتراضي 3306)</td><td>✅ تلقائي</td></tr>
+  <tr><td><code>MYSQLUSER</code></td><td>اسم مستخدم MySQL</td><td>✅ تلقائي</td></tr>
+  <tr><td><code>MYSQLPASSWORD</code></td><td>كلمة مرور MySQL</td><td>✅ تلقائي</td></tr>
+  <tr><td><code>MYSQLDATABASE</code></td><td>اسم قاعدة البيانات (railway)</td><td>✅ تلقائي</td></tr>
+  <tr><td><code>PORT</code></td><td>5000 (أو يُحدد تلقائياً)</td><td>تلقائي</td></tr>
+  <tr><td><code>JWT_SECRET</code></td><td>مفتاح تشفير التوكنات (غيّره في الإنتاج!)</td><td>⚠️ مهم</td></tr>
+  <tr><td><code>GEMINI_API_KEY</code></td><td>مفتاح Google Gemini API</td><td>⚡ للذكاء الاصطناعي</td></tr>
+</table>
+
+<h3>Frontend (Vercel Environment Variables):</h3>
+<table>
+  <tr><th>المتغير</th><th>القيمة</th><th>الوصف</th></tr>
+  <tr><td><code>VITE_API_URL</code></td><td><code>https://backend-production-03bc.up.railway.app</code></td><td>رابط الـ Backend (اختياري، الافتراضي هو نفس الرابط)</td></tr>
+</table>
+
+<!-- 11. FILES -->
+<h2 id="files">11. هيكل الملفات الكامل وما يفعله كل ملف</h2>
+
+<table>
+  <tr><th>الملف</th><th>اللغة</th><th>الوظيفة</th></tr>
+  <tr><td><code>fake-news-backend/index.js</code></td><td>Node.js / JavaScript</td><td>الخادم الكامل: Express app + جميع الـ 20 API route + Gemini integration + Auth middleware</td></tr>
+  <tr><td><code>fake-news-backend/database.js</code></td><td>Node.js / JavaScript</td><td>إنشاء جداول قاعدة البيانات عند أول تشغيل + بيانات أولية (admin account + مقالات تجريبية)</td></tr>
+  <tr><td><code>fake-news-backend/connection.js</code></td><td>Node.js / JavaScript</td><td>MySQL connection pool للاستخدام المشترك</td></tr>
+  <tr><td><code>fake-news-backend/package.json</code></td><td>JSON</td><td>تبعيات Node.js: express, mysql2, bcryptjs, jsonwebtoken, multer, cors, dotenv</td></tr>
+  <tr><td><code>fake-news-backend/Dockerfile</code></td><td>Docker</td><td>حاوية تشغيل الـ Backend على Railway</td></tr>
+  <tr><td><code>fake-news-backend/railway.json</code></td><td>JSON</td><td>إعدادات النشر على Railway (startCommand)</td></tr>
+  <tr><td><code>frontend/src/main.jsx</code></td><td>React/JSX</td><td>نقطة دخول React — يلف التطبيق بـ AuthProvider</td></tr>
+  <tr><td><code>frontend/src/App.jsx</code></td><td>React/JSX</td><td>التطبيق الرئيسي: شريط التنقل + Hamburger Menu + جميع الـ Routes</td></tr>
+  <tr><td><code>frontend/src/api.js</code></td><td>JavaScript</td><td>Axios instance مع baseURL + Request interceptor يضيف JWT تلقائياً + قائمة endpoints</td></tr>
+  <tr><td><code>frontend/src/auth.jsx</code></td><td>React/JSX</td><td>AuthContext: حالة المستخدم + login() + register() + logout()</td></tr>
+  <tr><td><code>frontend/src/styles.css</code></td><td>CSS3</td><td>التصميم الكامل للموقع: Dark Theme، RTL، Responsive، Hamburger، Chat، AI Results</td></tr>
+  <tr><td><code>frontend/src/Login.jsx</code></td><td>React/JSX</td><td>صفحة تسجيل الدخول مع validation وعرض بيانات تجريبية</td></tr>
+  <tr><td><code>frontend/src/Register.jsx</code></td><td>React/JSX</td><td>صفحة إنشاء حساب جديد</td></tr>
+  <tr><td><code>frontend/src/ReportPage.jsx</code></td><td>React/JSX</td><td>نموذج الإبلاغ عن شائعة مع جميع الحقول</td></tr>
+  <tr><td><code>frontend/src/ArticlesData.jsx</code></td><td>React/JSX</td><td>عرض المقالات من الـ API مع بحث فوري وعرض Grid</td></tr>
+  <tr><td><code>frontend/src/VideoAwareness.jsx</code></td><td>React/JSX</td><td>عرض الفيديوهات مع YouTube embed + إضافة/حذف للمشرف</td></tr>
+  <tr><td><code>frontend/src/AdvancedAIDetection.jsx</code></td><td>React/JSX</td><td>واجهة التحقق AI: إدخال نص + عرض نتيجة Gemini مع نسبة ومؤشر بصري</td></tr>
+  <tr><td><code>frontend/src/AIChat.jsx</code></td><td>React/JSX</td><td>واجهة دردشة مع Gemini AI: فقاعات رسائل + typing indicator + scroll تلقائي</td></tr>
+  <tr><td><code>frontend/src/AdminDashboard.jsx</code></td><td>React/JSX</td><td>لوحة تحكم: 4 إحصائيات + جدول أحدث البلاغات</td></tr>
+  <tr><td><code>frontend/src/AdminArticles.jsx</code></td><td>React/JSX</td><td>CRUD كامل للمقالات: إضافة/تعديل/حذف مع جدول وفورم</td></tr>
+  <tr><td><code>frontend/src/contentSettings.js</code></td><td>JavaScript</td><td>Hook لإعدادات المحتوى (اسم المنصة، الفئات، الروابط) مع localStorage sync</td></tr>
+  <tr><td><code>frontend/src/ErrorBoundary.jsx</code></td><td>React/JSX</td><td>معالجة الأخطاء غير المتوقعة مع رسالة للمستخدم وزر إعادة تحميل</td></tr>
+  <tr><td><code>frontend/src/LoadingSpinner.jsx</code></td><td>React/JSX</td><td>مؤشر التحميل المتحرك مع رسالة مخصصة</td></tr>
+  <tr><td><code>frontend/src/Notifications.jsx</code></td><td>React/JSX</td><td>نظام إشعارات منبثقة (toast) مع Context</td></tr>
+  <tr><td><code>frontend/vercel.json</code></td><td>JSON</td><td>إعادة توجيه SPA: كل المسارات → index.html (منع خطأ 404)</td></tr>
+  <tr><td><code>frontend/vite.config.js</code></td><td>JavaScript</td><td>إعدادات Vite: React plugin + port 3000</td></tr>
+  <tr><td><code>frontend/package.json</code></td><td>JSON</td><td>تبعيات Frontend: react, react-dom, react-router-dom, axios, bootstrap, vite</td></tr>
+</table>
+
+<!-- 12. ADMIN GUIDE -->
+<h2 id="admin">12. دليل المشرف</h2>
+
+<div class="success-box">
+  <strong>🔑 بيانات الدخول الافتراضية للمشرف:</strong><br/>
+  البريد: <code>admin@platform.com</code><br/>
+  كلمة المرور: <code>admin123</code><br/>
+  يُنصح بتغيير كلمة المرور بعد أول دخول.
+</div>
+
+<h3>ما يستطيع المشرف فعله:</h3>
+<ol>
+  <li><strong>إضافة مقالات توعوية</strong> — عبر /admin-articles → "+ مقال جديد"</li>
+  <li><strong>تعديل وحذف المقالات</strong> — من نفس الصفحة</li>
+  <li><strong>إضافة فيديوهات</strong> — عبر /videos → "+ إضافة فيديو" (يدعم YouTube/Facebook/TikTok)</li>
+  <li><strong>مراجعة البلاغات</strong> — عبر /admin → جدول أحدث البلاغات</li>
+  <li><strong>مشاهدة الإحصائيات</strong> — عبر /admin → 4 بطاقات إحصائية</li>
+  <li><strong>تغيير أدوار المستخدمين</strong> — عبر API: PUT /api/admin/users/:id/role</li>
+</ol>
+
+<h3>إضافة Gemini AI (خطوة واحدة):</h3>
+<ol>
+  <li>اذهب إلى: <code>https://railway.com</code> → تسجيل دخول</li>
+  <li>اختر المشروع → خدمة الـ Backend → Variables</li>
+  <li>أضف: <strong>GEMINI_API_KEY</strong> = مفتاحك من <code>aistudio.google.com</code></li>
+  <li>Railway يُعيد النشر تلقائياً خلال دقيقتين</li>
+  <li>الآن تحقق AI ودردشة AI يعملان بالذكاء الاصطناعي الحقيقي</li>
+</ol>
+
+<div class="footer">
+  <strong>منصة مكافحة الشائعات</strong> — حروب الجيل الرابع - مصر<br/>
+  تم إنشاء هذا التوثيق تلقائياً — إبريل 2026<br/>
+  للطباعة كـ PDF: افتح في المتصفح ← Ctrl+P ← Save as PDF
+</div>
+
+</div>
+</body>
+</html>

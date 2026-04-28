@@ -1,104 +1,57 @@
 import { useState } from 'react';
-import { useAuth } from './auth.jsx';
+import { useAuth } from './auth';
+import { useNavigate, Link } from 'react-router-dom';
 
-function RegisterPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+function Register() {
+  const { register }       = useAuth();
+  const navigate           = useNavigate();
+  const [name, setName]    = useState('');
+  const [email, setEmail]  = useState('');
+  const [pass, setPass]    = useState('');
+  const [err, setErr]      = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
 
-  const handleSubmit = async (e) => {
+  const submit = async e => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    if (password !== confirmPassword) {
-      setError('كلمات المرور غير متطابقة');
-      setLoading(false);
-      return;
-    }
-
+    setErr(''); setLoading(true);
     try {
-      await register(name, email, password);
-      window.location.href = '/login';
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+      await register(name, email, pass);
+      navigate('/login');
+    } catch (ex) {
+      setErr(ex.response?.data?.message || 'خطأ في التسجيل');
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="row justify-content-center">
-      <div className="col-lg-5">
-        <div className="card border-0 shadow-sm p-4">
-          <h2 className="h4 mb-4 text-center">إنشاء حساب جديد</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-3">
-              <label className="form-label">الاسم الكامل</label>
-              <input
-                type="text"
-                className="form-control"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">البريد الإلكتروني</label>
-              <input
-                type="email"
-                className="form-control"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">كلمة المرور</label>
-              <input
-                type="password"
-                className="form-control"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">تأكيد كلمة المرور</label>
-              <input
-                type="password"
-                className="form-control"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-            {error && (
-              <div className="alert alert-danger" role="alert">
-                {error}
-              </div>
-            )}
-            <button
-              type="submit"
-              className="btn btn-primary w-100"
-              disabled={loading}
-            >
-              {loading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
-            </button>
-          </form>
-          <div className="text-center mt-3">
-            <a href="/login" className="text-decoration-none">
-              لديك حساب بالفعل؟ سجل دخول
-            </a>
+    <div className="auth-wrapper">
+      <div className="auth-card">
+        <div className="auth-logo">🛡️</div>
+        <h2>إنشاء حساب</h2>
+        <p className="auth-subtitle">منصة مكافحة الشائعات</p>
+        {err && <div className="alert alert-danger">{err}</div>}
+        <form onSubmit={submit}>
+          <div className="form-group">
+            <label>الاسم الكامل</label>
+            <input className="form-control" value={name} onChange={e => setName(e.target.value)} required placeholder="أحمد محمد" />
           </div>
-        </div>
+          <div className="form-group" style={{ marginTop: 14 }}>
+            <label>البريد الإلكتروني</label>
+            <input className="form-control" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="example@email.com" />
+          </div>
+          <div className="form-group" style={{ marginTop: 14 }}>
+            <label>كلمة المرور</label>
+            <input className="form-control" type="password" value={pass} onChange={e => setPass(e.target.value)} required placeholder="••••••••" minLength={6} />
+          </div>
+          <button className="btn btn-warning w-100 mt-3" type="submit" disabled={loading}>
+            {loading ? 'جارٍ التسجيل...' : 'إنشاء حساب'}
+          </button>
+        </form>
+        <p className="mt-3 text-center">
+          لديك حساب بالفعل؟ <Link to="/login">سجّل دخولك</Link>
+        </p>
       </div>
     </div>
   );
 }
 
-export default RegisterPage;
+export default Register;

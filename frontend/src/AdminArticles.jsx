@@ -1,136 +1,126 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from './api';
-import { useAuth } from './auth';
 
 const EMPTY = { title: '', content: '', category: 'awareness', tags: '', is_published: true };
 
-export default function AdminArticles() {
-    const { user } = useAuth();
-    const token = localStorage.getItem('token');
-    const [articles, setArticles] = useState([]);
-    const [form, setForm] = useState(EMPTY);
-    const [editing, setEditing] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [msg, setMsg] = useState('');
+function AdminArticles() {
+  const [articles, setArticles] = useState([]);
+  const [form, setForm]         = useState(EMPTY);
+  const [editing, setEditing]   = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [msg, setMsg]           = useState('');
+  const [loading, setLoading]   = useState(true);
 
-    const headers = { headers: { Authorization: `Bearer ${token}` } };
+  const load = () => {
+    api.get('/api/articles')
+      .then(r => setArticles(r.data || []))
+      .catch(() => setArticles([]))
+      .finally(() => setLoading(false));
+  };
 
-    const load = async () => {
-        try {
-            const { data } = await api.get('/api/articles');
-            setArticles(Array.isArray(data) ? data : (data.articles || []));
-        } catch(e) { setMsg('خطأ في تحميل المقالات'); }
-        setLoading(false);
-    };
+  useEffect(load, []);
 
-    useEffect(() => { load(); }, []);
+  const save = async e => {
+    e.preventDefault();
+    try {
+      if (editing) {
+        await api.put('/api/articles/' + editing, form);
+        setMsg('✅ تم تعديل المقال');
+      } else {
+        await api.post('/api/articles', form);
+        setMsg('✅ تم إضافة المقال');
+      }
+      setForm(EMPTY); setEditing(null); setShowForm(false); load();
+    } catch (ex) { setMsg('❌ ' + (ex.response?.data?.message || 'خطأ')); }
+  };
 
-    const save = async (e) => {
-        e.preventDefault();
-        setMsg('');
-        try {
-            if (editing) {
-                await api.put(`/api/articles/${editing}`, form, headers);
-                setMsg('تم تحديث المقال ✔');
-            } else {
-                await api.post('/api/articles', form, headers);
-                setMsg('تم إضافة المقال ✔');
-            }
-            setForm(EMPTY);
-            setEditing(null);
-            load();
-        } catch(e) {
-            setMsg(e?.response?.data?.error || 'خطأ في الحفظ');
-        }
-    };
+  const del = async id => {
+    if (!window.confirm('حذف المقال؟')) return;
+    await api.delete('/api/articles/' + id).catch(() => {});
+    load();
+  };
 
-    const del = async (id) => {
-        if (!window.confirm('حذف المقال؟')) return;
-        try {
-            await api.delete(`/api/articles/${id}`, headers);
-            setMsg('تم الحذف');
-            load();
-        } catch(e) { setMsg('خطأ في الحذف'); }
-    };
+  const edit = a => {
+    setForm({ title: a.title, content: a.content, category: a.category || 'awareness', tags: a.tags || '', is_published: !!a.is_published });
+    setEditing(a.article_id);
+    setShowForm(true);
+  };
 
-    const edit = (a) => {
-        setForm({ title: a.title, content: a.content, category: a.category || 'awareness', tags: a.tags || '', is_published: !!a.is_published });
-        setEditing(a.id);
-        window.scrollTo(0, 0);
-    };
+  if (loading) return <div className="text-center py-5"><div className="spinner-border text-warning" role="status" /></div>;
 
-    return (
-        <div className="admin-articles">
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: 16 }}>
-                {editing ? 'تعديل مقال' : 'إضافة مقال جديد'}
-            </h2>
-            {msg && <div className={msg.includes('✔') ? 'alert alert-success' : 'alert alert-danger'}>{msg}</div>}
-            <form onSubmit={save} style={{ background: '#fff', padding: 20, borderRadius: 10, marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,.08)' }}>
-                <div className="form-group">
-                    <label>العنوان *</label>
-                    <input className="form-control" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required />
-                </div>
-                <div className="form-group" style={{ marginTop: 12 }}>
-                    <label>المحتوى *</label>
-                    <textarea className="form-control" rows={6} value={form.content} onChange={e => setForm({...form, content: e.target.value})} required />
-                </div>
-                <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-                    <div className="form-group" style={{ flex: 1, minWidth: 150 }}>
-                        <label>الفئة</label>
-                        <select className="form-control" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
-                            <option value="awareness">توعية</option>
-                            <option value="health">صحة</option>
-                            <option value="technology">تكنولوجيا</option>
-                            <option value="politics">سياسة</option>
-                            <option value="economy">اقتصاد</option>
-                            <option value="other">أخرى</option>
-                        </select>
-                    </div>
-                    <div className="form-group" style={{ flex: 1, minWidth: 150 }}>
-                        <label>الوسوم (مفصولة بفاصلة)</label>
-                        <input className="form-control" value={form.tags} onChange={e => setForm({...form, tags: e.target.value})} placeholder="مثال: صحة,توعية" />
-                    </div>
-                </div>
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-                    <input type="checkbox" id="pub" checked={form.is_published} onChange={e => setForm({...form, is_published: e.target.checked})} style={{ width: 18, height: 18, cursor: 'pointer' }} />
-                    <label htmlFor="pub" style={{ marginBottom: 0, cursor: 'pointer', fontWeight: 500 }}>نشر المقال على الفور</label>
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                    <button type="submit" className="btn btn-primary">{editing ? 'حفظ التعديل' : 'إضافة المقال'}</button>
-                    {editing && <button type="button" className="btn btn-secondary" onClick={() => { setEditing(null); setForm(EMPTY); }}>إلغاء</button>}
-                </div>
-            </form>
+  return (
+    <div className="page-container">
+      <div className="page-header">
+        <h2>📝 إدارة المقالات</h2>
+        <button className="btn btn-warning mt-2" onClick={() => { setShowForm(s => !s); setForm(EMPTY); setEditing(null); }}>
+          {showForm ? '✕ إغلاق' : '+ مقال جديد'}
+        </button>
+      </div>
 
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 12 }}>المقالات المنشورة ({articles.length})</h3>
-            {loading ? <div className="loading-spinner"><div className="spinner"></div></div> : articles.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>لا توجد مقالات بعد</div>
-            ) : (
-                <div style={{ overflowX: 'auto' }}>
-                    <table className="table table-hover" style={{ background: '#fff', borderRadius: 10 }}>
-                        <thead style={{ background: '#f8f9fa' }}>
-                            <tr>
-                                <th>العنوان</th>
-                                <th>الفئة</th>
-                                <th>الحالة</th>
-                                <th>الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {articles.map(a => (
-                                <tr key={a.id}>
-                                    <td style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title}</td>
-                                    <td><span className="badge bg-info text-dark">{a.category || 'عام'}</span></td>
-                                    <td><span className={`badge ${a.is_published ? 'bg-success' : 'bg-warning text-dark'}`}>{a.is_published ? 'منشور' : 'مسودة'}</span></td>
-                                    <td>
-                                        <button className="btn btn-sm btn-outline-primary" style={{ marginInlineEnd: 6 }} onClick={() => edit(a)}>تعديل</button>
-                                        <button className="btn btn-sm btn-outline-danger" onClick={() => del(a.id)}>حذف</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
-    );
+      {msg && <div className="alert alert-info mb-3" onClick={() => setMsg('')}>{msg}</div>}
+
+      {showForm && (
+        <form onSubmit={save} className="card-form mb-4">
+          <h5>{editing ? 'تعديل المقال' : 'مقال جديد'}</h5>
+          <div className="form-group mt-3">
+            <label>العنوان *</label>
+            <input className="form-control" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
+          </div>
+          <div className="form-group mt-3">
+            <label>المحتوى *</label>
+            <textarea className="form-control" rows={6} value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} required />
+          </div>
+          <div className="row mt-3">
+            <div className="col-md-6">
+              <label>الفئة</label>
+              <select className="form-control" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
+                <option value="awareness">توعية</option>
+                <option value="education">تعليم</option>
+                <option value="health">صحة</option>
+                <option value="politics">سياسة</option>
+                <option value="security">أمن</option>
+              </select>
+            </div>
+            <div className="col-md-6">
+              <label>الوسوم</label>
+              <input className="form-control" value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="وسم1، وسم2" />
+            </div>
+          </div>
+          <div className="form-check mt-3">
+            <input className="form-check-input" type="checkbox" id="pub" checked={form.is_published} onChange={e => setForm({ ...form, is_published: e.target.checked })} />
+            <label className="form-check-label" htmlFor="pub">منشور</label>
+          </div>
+          <div className="d-flex gap-2 mt-3">
+            <button type="submit" className="btn btn-success">{editing ? 'حفظ التعديلات' : 'نشر المقال'}</button>
+            <button type="button" className="btn btn-outline-secondary" onClick={() => { setShowForm(false); setEditing(null); setForm(EMPTY); }}>إلغاء</button>
+          </div>
+        </form>
+      )}
+
+      <div className="table-responsive">
+        <table className="table table-hover">
+          <thead className="table-dark">
+            <tr><th>العنوان</th><th>الفئة</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr>
+          </thead>
+          <tbody>
+            {articles.map(a => (
+              <tr key={a.article_id}>
+                <td>{a.title}</td>
+                <td><span className="badge bg-secondary">{a.category}</span></td>
+                <td><span className={`badge ${a.is_published ? 'bg-success' : 'bg-warning'}`}>{a.is_published ? 'منشور' : 'مسودة'}</span></td>
+                <td>{a.created_at ? new Date(a.created_at).toLocaleDateString('ar-EG') : '-'}</td>
+                <td>
+                  <button className="btn btn-sm btn-outline-warning me-1" onClick={() => edit(a)}>تعديل</button>
+                  <button className="btn btn-sm btn-outline-danger"       onClick={() => del(a.article_id)}>حذف</button>
+                </td>
+              </tr>
+            ))}
+            {articles.length === 0 && <tr><td colSpan={5} className="text-center text-muted py-3">لا توجد مقالات بعد</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
+
+export default AdminArticles;
