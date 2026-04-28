@@ -14,6 +14,8 @@ import RealTimeChat from './RealTimeChat';
 import AdvancedAIDetection from './AdvancedAIDetection';
 import ReportReviewSystem from './ReportReviewSystem';
 import ExternalLinksPage from './ExternalLinksPage';
+import VideoAwareness from './VideoAwareness';
+import AdminArticles from './AdminArticles';
 import { getDefaultArticles, useContentSettings } from './contentSettings';
 
 function App() {
@@ -30,6 +32,7 @@ function AppContent() {
   const { user, logout, isAuthenticated, isAdmin, isReviewer } = useAuth();
   const { success, error, warning, info } = useNotifications();
   const { settings } = useContentSettings();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div className="app-shell fade-in">
@@ -38,7 +41,10 @@ function AppContent() {
           <Link className="brand" to="/">
             {settings.platform.brandName}
           </Link>
-          <nav className="d-flex gap-3 nav-links">
+          <button className="hamburger-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label="قائمة">
+            {menuOpen ? "✕" : "☰"}
+          </button>
+          <nav className={"d-flex gap-3 nav-links" + (menuOpen ? " mobile-open" : "")} onClick={() => setMenuOpen(false)}>
             {isAuthenticated && <NavLink to="/" end>🏠 الرئيسية</NavLink>}
             {isAuthenticated && <NavLink to="/report">📤 رفع بلاغ</NavLink>}
             {isAuthenticated && <NavLink to="/my-reports">🧾 بلاغاتي</NavLink>}
@@ -50,6 +56,8 @@ function AppContent() {
             {isAuthenticated && <NavLink to="/realtime-chat">💬 الدردشة المباشرة</NavLink>}
             {isAuthenticated && <NavLink to="/ai-detection">🧠 الكشف المتقدم</NavLink>}
             {isAdmin && <NavLink to="/analytics">📈 التحليلات المتقدمة</NavLink>}
+            {isAuthenticated && <NavLink to="/videos">🎬 فيديوهات توعوية</NavLink>}
+            {isAdmin && <NavLink to="/admin-articles">📝 إدارة المقالات</NavLink>}
             {isAdmin && <NavLink to="/admin">⚙️ لوحة المدير</NavLink>}
           </nav>
           <div className="d-flex gap-2 align-items-center">

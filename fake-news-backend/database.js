@@ -10,7 +10,7 @@ const baseConnection = mysql.createConnection({
     charset: 'utf8mb4',
 });
 
-const dbName = process.env.DB_NAME || 'fake_news_db';
+const dbName = process.env.DB_NAME || process.env.MYSQLDATABASE || 'fake_news_db';
 
 function run(sql, values = []) {
     return new Promise((resolve, reject) => {
@@ -42,34 +42,6 @@ async function init() {
     await run(`USE ${dbName}`);
     await run(`SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'`);
     await run(`SET CHARACTER SET utf8mb4`);
-
-        // حذف البلاغات القديمة التي تم تخزين عناوينها كعلامات استفهام بسبب ترميز خاطئ
-        await run(`
-                DELETE re FROM report_evidence re
-                INNER JOIN reports r ON re.report_id = r.report_id
-                WHERE r.title LIKE '%?%'
-                    AND r.title REGEXP '^[ ?]+$'
-        `);
-
-        await run(`
-                DELETE v FROM verifications v
-                INNER JOIN reports r ON v.report_id = r.report_id
-                WHERE r.title LIKE '%?%'
-                    AND r.title REGEXP '^[ ?]+$'
-        `);
-
-        await run(`
-                DELETE rr FROM report_reviews rr
-                INNER JOIN reports r ON rr.report_id = r.report_id
-                WHERE r.title LIKE '%?%'
-                    AND r.title REGEXP '^[ ?]+$'
-        `);
-
-        await run(`
-                DELETE FROM reports
-                WHERE title LIKE '%?%'
-                    AND title REGEXP '^[ ?]+$'
-        `);
 
     await run(`
         CREATE TABLE IF NOT EXISTS users (
@@ -160,7 +132,6 @@ async function init() {
     await ensureIndex('reports', 'idx_reports_status_created', 'CREATE INDEX idx_reports_status_created ON reports (status, created_at)');
     await ensureIndex('reports', 'idx_reports_category_created', 'CREATE INDEX idx_reports_category_created ON reports (category, created_at)');
     await ensureIndex('reports', 'idx_reports_created_at', 'CREATE INDEX idx_reports_created_at ON reports (created_at)');
-    await ensureIndex('articles', 'idx_articles_published_created', 'CREATE INDEX idx_articles_published_created ON articles (is_published, created_at)');
     await ensureIndex('sources', 'idx_sources_credibility', 'CREATE INDEX idx_sources_credibility ON sources (credibility_score)');
     await ensureIndex('verifications', 'uq_verification_report', 'ALTER TABLE verifications ADD UNIQUE INDEX uq_verification_report (report_id)');
 
@@ -212,6 +183,36 @@ async function init() {
         ) ENGINE=InnoDB
     `);
 
+    // حذف البلاغات القديمة التي تم تخزين عناوينها كعلامات استفهام بسبب ترميز خاطئ
+    await run(`
+        DELETE re FROM report_evidence re
+        INNER JOIN reports r ON re.report_id = r.report_id
+        WHERE r.title LIKE '%?%'
+            AND r.title REGEXP '^[ ?]+$'
+    `);
+
+    await run(`
+        DELETE v FROM verifications v
+        INNER JOIN reports r ON v.report_id = r.report_id
+        WHERE r.title LIKE '%?%'
+            AND r.title REGEXP '^[ ?]+$'
+    `);
+
+    await run(`
+        DELETE rr FROM report_reviews rr
+        INNER JOIN reports r ON rr.report_id = r.report_id
+        WHERE r.title LIKE '%?%'
+            AND r.title REGEXP '^[ ?]+$'
+    `);
+
+    await run(`
+        DELETE FROM reports
+        WHERE title LIKE '%?%'
+            AND title REGEXP '^[ ?]+$'
+    `);
+
+    await ensureIndex('articles', 'idx_articles_published_created', 'CREATE INDEX idx_articles_published_created ON articles (is_published, created_at)');
+
     await run(`
         CREATE TABLE IF NOT EXISTS external_links_config (
             link_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -225,6 +226,18 @@ async function init() {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB
     `);
+
+    await query(`
+        CREATE TABLE IF NOT EXISTS awareness_videos (
+            video_id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            video_url TEXT NOT NULL,
+            platform VARCHAR(50) DEFAULT 'youtube',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
 
     await run(
         `INSERT INTO sources (source_name, source_url, credibility_score, notes)

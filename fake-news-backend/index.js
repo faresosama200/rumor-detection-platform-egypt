@@ -426,59 +426,89 @@ app.get('/api/dashboard/stats', async (_req, res) => {
     }
 });
 
-app.post('/api/verify-ai', (req, res) => {
+app.post('/api/verify-ai', async (req, res) => {
     const { text = '', sourceUrl = '' } = req.body;
+    if (!text.trim()) return res.status(400).json({ error: 'النص مطلوب' });
+
+    const GEMINI_KEY = process.env.GEMINI_API_KEY;
+
+    if (GEMINI_KEY) {
+        try {
+            const prompt = `أنت محلل أخبار متخصص في كشف الشائعات والأخبار المضللة.
+حلل هذا الخبر: "${text.substring(0, 1000)}"
+${sourceUrl ? `المصدر: ${sourceUrl}` : ''}
+
+أجب بـ JSON فقط بهذا الشكل بدون أي نص إضافي:
+{"confidence": <رقم 0-100 نسبة الموثوقية>, "verdict": "<true|false|uncertain>", "summary": "<تحليل مختصر بالعربية في جملة أو جملتين>", "reasons": ["سبب1", "سبب2"]}
+
+true = موثوق، false = مضلل، uncertain = يحتاج تحقق`;
+
+            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const geminiData = await geminiRes.json();
+            const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const result = JSON.parse(jsonMatch[0]);
+                return res.json({ confidence: result.confidence || 50, verdict: result.verdict || 'uncertain', summary: result.summary || 'لم يتمكن النظام من التحليل', reasons: result.reasons || [], powered_by: 'gemini' });
+            }
+        } catch (err) {
+            console.error('Gemini verify error:', err.message);
+        }
+    }
+
+    // Fallback analysis
     const lowered = text.toLowerCase();
-
-    const suspiciousPatterns = ['عاجل جدا', 'غير قابل للتصديق', 'شارك الآن', 'ارسلها لكل الناس'];
+    const suspiciousPatterns = ['عاجل جدا', 'غير قابل للتصديق', 'شارك الآن', 'ارسلها لكل الناس', 'سيصيبك'];
     const penalty = suspiciousPatterns.reduce((sum, p) => (lowered.includes(p) ? sum + 18 : sum), 0);
-
     let sourceScore = 55;
     if (sourceUrl.includes('.gov') || sourceUrl.includes('.edu')) sourceScore += 25;
     if (sourceUrl.includes('.tk') || sourceUrl.includes('.xyz')) sourceScore -= 25;
-
     const confidence = Math.max(5, Math.min(95, sourceScore - penalty));
-    const verdict = confidence >= 50 ? 'true' : 'false';
-
-    return res.json({
-        confidence,
-        verdict,
-        summary:
-            verdict === 'true'
-                ? 'الخبر يبدو مقبولاً مبدئيا، لكن يفضل المراجعة البشرية.'
-                : 'الخبر عالي الخطورة ويحتاج تحقق بشري قبل النشر.',
-    });
+    const verdict = confidence >= 65 ? 'true' : confidence <= 35 ? 'false' : 'uncertain';
+    return res.json({ confidence, verdict, summary: verdict === 'true' ? 'الخبر يبدو مقبولاً مبدئياً، لكن يفضل المراجعة البشرية.' : verdict === 'false' ? 'الخبر عالي الخطورة ويحتاج تحققاً بشرياً.' : 'الخبر يحتاج مراجعة إضافية.', powered_by: 'local' });
+});
 });
 
-function buildChatReply(message, history = []) {
-    const question = String(message || '').trim();
-    if (!question) {
-        return 'اكتب سؤالك بشكل واضح وسأجيبك مباشرة.';
-    }
-
-    const lower = question.toLowerCase();
-    const recentContext = (Array.isArray(history) ? history : [])
-        .slice(-4)
-        .map((item) => `${item.role === 'assistant' ? 'المساعد' : 'المستخدم'}: ${String(item.content || '').trim()}`)
-        .filter(Boolean)
-        .join('\n');
-
-    if (lower.includes('react') || lower.includes('javascript') || lower.includes('node') || lower.includes('برم')) {
-        return `أكيد، أقدر أساعدك تقنيا.\n\nسؤالك: "${question}"\n\n${recentContext ? `سياق آخر الرسائل:\n${recentContext}\n\n` : ''}لأفضل إجابة عملية، أرسل:\n1) الكود الحالي\n2) الخطأ أو السلوك غير المتوقع\n3) النتيجة المطلوبة\n\nوسأعطيك الحل خطوة بخطوة.`;
-    }
-
-    if (lower.includes('صحة') || lower.includes('مرض') || lower.includes('دواء')) {
-        return `أقدر أشرح لك المعلومة الصحية بشكل مبسط.\n\nسؤالك: "${question}"\n\nتنبيه مهم: هذه معلومات عامة وليست بديلا عن تشخيص طبي مباشر.`;
-    }
-
-    return `سؤالك: "${question}"\n\nأستطيع مساعدتك في أي إطار (عام، تقني، تعليمي، إداري، كتابة محتوى، أو تحليل).\n${recentContext ? `\nاعتمادا على سياق المحادثة:\n${recentContext}\n` : ''}\nإذا أردت إجابة أدق، أرسل الهدف المطلوب وأي قيود (الوقت، اللغة، مستوى التفصيل).`;
-}
-
-app.post('/api/ai-chat', (req, res) => {
+app.post('/api/ai-chat', async (req, res) => {
     try {
         const { message = '', history = [] } = req.body || {};
-        const reply = buildChatReply(message, history);
-        return res.json({ reply });
+        if (!message.trim()) return res.json({ reply: 'اكتب سؤالك بشكل واضح وسأجيبك مباشرة.' });
+
+        const GEMINI_KEY = process.env.GEMINI_API_KEY;
+
+        if (GEMINI_KEY) {
+            try {
+                const historyText = (Array.isArray(history) ? history : []).slice(-6)
+                    .map(h => (h.role === 'user' ? 'المستخدم' : 'المساعد') + ': ' + String(h.content || '').trim())
+                    .filter(Boolean).join('\n');
+
+                const prompt = `أنت مساعد ذكي متخصص في مكافحة الشائعات والتحقق من المعلومات. أجب باللغة العربية بشكل واضح ومفيد.
+${historyText ? `سياق المحادثة:\n${historyText}\n\n` : ''}السؤال الحالي: ${message.substring(0, 1500)}`;
+
+                const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const geminiData = await geminiRes.json();
+                const reply = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (reply) return res.json({ reply, powered_by: 'gemini' });
+            } catch (err) {
+                console.error('Gemini chat error:', err.message);
+            }
+        }
+
+        // Fallback
+        return res.json({ reply: `سؤالك: "${message}"\n\nأستطيع مساعدتك في التحقق من الأخبار والمعلومات. أرسل الخبر الذي تريد التحقق منه وسأحلله لك.\nللحصول على أفضل تحليل، أضف رابط المصدر إذا كان متاحاً.`, powered_by: 'local' });
+    } catch (error) {
+        return res.status(500).json({ error: 'failed to process ai chat', details: error.message });
+    }
+});
+
     } catch (error) {
         return res.status(500).json({ error: 'failed to process ai chat', details: error.message });
     }
@@ -703,6 +733,51 @@ app.use((err, _req, res, _next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// ========== VIDEOS API ==========
+app.get('/api/videos', async (req, res) => {
+    try {
+        const videos = await query('SELECT * FROM awareness_videos ORDER BY created_at DESC');
+        return res.json({ count: videos.length, videos });
+    } catch (error) {
+        return res.status(500).json({ error: 'failed to load videos', details: error.message });
+    }
+});
+
+app.post('/api/videos', async (req, res) => {
+    try {
+        const { title, description = '', video_url, platform = 'youtube' } = req.body;
+        if (!title || !video_url) return res.status(400).json({ error: 'title and video_url are required' });
+        const result = await query(
+            'INSERT INTO awareness_videos (title, description, video_url, platform) VALUES (?, ?, ?, ?)',
+            [title, description, video_url, platform]
+        );
+        return res.json({ success: true, video_id: result.insertId });
+    } catch (error) {
+        return res.status(500).json({ error: 'failed to add video', details: error.message });
+    }
+});
+
+app.delete('/api/videos/:id', async (req, res) => {
+    try {
+        await query('DELETE FROM awareness_videos WHERE video_id = ?', [req.params.id]);
+        return res.json({ success: true });
+    } catch (error) {
+        return res.status(500).json({ error: 'failed to delete video', details: error.message });
+    }
+});
+// ========== END VIDEOS API ==========
+
+
+app.delete('/api/articles/:id', async (req, res) => {
+    try {
+        await query('DELETE FROM articles WHERE article_id = ?', [req.params.id]);
+        return res.json({ success: true });
+    } catch (error) {
+        return res.status(500).json({ error: 'failed to delete article', details: error.message });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`API running at http://localhost:${PORT}`);
 });
