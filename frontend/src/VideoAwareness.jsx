@@ -1,150 +1,152 @@
-import { useState, useEffect } from 'react';
-import { api } from './api';
-import { useAuth } from './auth.jsx';
+import React, { useState, useEffect } from 'react';
+import api from './api';
+import { useAuth } from './auth';
+
+const PLATFORM_LABELS = {
+    youtube: '▶ YouTube',
+    facebook: 'f Facebook',
+    tiktok: '♪ TikTok',
+    other: '🔗 أخرى'
+};
+
+function getYouTubeId(url) {
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    return match ? match[1] : null;
+}
 
 export default function VideoAwareness() {
-  const { isAdmin } = useAuth();
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', video_url: '', platform: 'youtube' });
-  const [submitting, setSubmitting] = useState(false);
-  const [msg, setMsg] = useState('');
+    const { user } = useAuth();
+    const isAdmin = user?.role === 'admin';
+    const token = localStorage.getItem('token');
+    const [videos, setVideos] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showForm, setShowForm] = useState(false);
+    const [form, setForm] = useState({ title: '', description: '', url: '', platform: 'youtube' });
+    const [msg, setMsg] = useState('');
 
-  useEffect(() => { fetchVideos(); }, []);
+    const load = async () => {
+        try {
+            const { data } = await api.get('/api/videos');
+            setVideos(Array.isArray(data) ? data : (data.videos || []));
+        } catch(e) { console.error(e); }
+        setLoading(false);
+    };
 
-  async function fetchVideos() {
-    setLoading(true);
-    try {
-      const res = await api.get('/videos');
-      setVideos(res.data.videos || []);
-    } catch(e) { setVideos([]); } finally { setLoading(false); }
-  }
+    useEffect(() => { load(); }, []);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.title.trim() || !form.video_url.trim()) { setMsg('يرجى ملء العنوان والرابط'); return; }
-    setSubmitting(true); setMsg('');
-    try {
-      await api.post('/videos', form);
-      setMsg('تمت الإضافة بنجاح!');
-      setForm({ title: '', description: '', video_url: '', platform: 'youtube' });
-      setShowForm(false);
-      fetchVideos();
-    } catch(e) { setMsg('حدث خطأ، حاول مجدداً'); } finally { setSubmitting(false); }
-  }
+    const addVideo = async (e) => {
+        e.preventDefault();
+        setMsg('');
+        try {
+            await api.post('/api/videos', form, { headers: { Authorization: `Bearer ${token}` } });
+            setMsg('تم إضافة الفيديو ✔');
+            setForm({ title: '', description: '', url: '', platform: 'youtube' });
+            setShowForm(false);
+            load();
+        } catch(e) {
+            setMsg(e?.response?.data?.error || 'خطأ في الإضافة');
+        }
+    };
 
-  async function handleDelete(id) {
-    if (!window.confirm('تأكيد حذف الفيديو؟')) return;
-    try { await api.delete('/videos/' + id); fetchVideos(); } catch(e) {}
-  }
+    const delVideo = async (id) => {
+        if (!window.confirm('حذف الفيديو؟')) return;
+        try {
+            await api.delete(`/api/videos/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            load();
+        } catch(e) { alert('خطأ في الحذف'); }
+    };
 
-  function getEmbedUrl(url, platform) {
-    if (!url) return null;
-    try {
-      if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        const ytId = url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/)?.[1];
-        return ytId ? 'https://www.youtube.com/embed/' + ytId : null;
-      }
-      if (url.includes('facebook.com')) {
-        return 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(url);
-      }
-    } catch(e) {}
-    return null;
-  }
+    if (loading) return <div className="loading-spinner"><div className="spinner"></div></div>;
 
-  const platforms = { youtube: '▶ يوتيوب', tiktok: '🎵 تيك توك', facebook: '👥 فيسبوك', other: '🔗 رابط' };
-
-  return (
-    <div>
-      <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-        <div>
-          <h2 className="fw-bold mb-1">🎬 فيديوهات توعوية</h2>
-          <p className="text-muted mb-0">مقاطع فيديو تثقيفية حول الشائعات والتحقق من المعلومات</p>
-        </div>
-        {isAdmin && (
-          <button className="btn btn-warning" onClick={() => setShowForm(!showForm)}>
-            {showForm ? '✕ إلغاء' : '➕ إضافة فيديو'}
-          </button>
-        )}
-      </div>
-
-      {msg && <div className={'alert ' + (msg.includes('نجاح') ? 'alert-success' : 'alert-danger') + ' mb-3'}>{msg}</div>}
-
-      {showForm && isAdmin && (
-        <div className="card border-0 shadow-sm p-4 mb-4">
-          <h5 className="fw-bold mb-3">إضافة فيديو جديد</h5>
-          <form onSubmit={handleSubmit}>
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label">عنوان الفيديو *</label>
-                <input className="form-control" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="عنوان الفيديو" required />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">المنصة</label>
-                <select className="form-select" value={form.platform} onChange={e => setForm({...form, platform: e.target.value})}>
-                  <option value="youtube">يوتيوب</option>
-                  <option value="facebook">فيسبوك</option>
-                  <option value="tiktok">تيك توك</option>
-                  <option value="other">منصة أخرى</option>
-                </select>
-              </div>
-              <div className="col-12">
-                <label className="form-label">رابط الفيديو *</label>
-                <input className="form-control" value={form.video_url} onChange={e => setForm({...form, video_url: e.target.value})} placeholder="https://www.youtube.com/watch?v=..." required />
-              </div>
-              <div className="col-12">
-                <label className="form-label">وصف الفيديو</label>
-                <textarea className="form-control" rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="وصف مختصر" />
-              </div>
-              <div className="col-12">
-                <button type="submit" className="btn btn-warning" disabled={submitting}>
-                  {submitting ? '⏳ جارٍ الحفظ...' : '💾 حفظ الفيديو'}
-                </button>
-              </div>
+    return (
+        <div className="video-awareness">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>فيديوهات توعوية</h2>
+                {isAdmin && (
+                    <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+                        {showForm ? 'إلغاء' : '+ إضافة فيديو'}
+                    </button>
+                )}
             </div>
-          </form>
-        </div>
-      )}
 
-      {loading ? (
-        <div className="text-center py-5"><div className="spinner-border text-warning"></div><p className="mt-2">جارٍ التحميل...</p></div>
-      ) : videos.length === 0 ? (
-        <div className="text-center py-5">
-          <div style={{fontSize:'4rem'}}>🎬</div>
-          <p className="text-muted mt-2">لا توجد فيديوهات بعد{isAdmin ? '. أضف أول فيديو!' : ''}</p>
-        </div>
-      ) : (
-        <div className="row g-4">
-          {videos.map(v => {
-            const embedUrl = getEmbedUrl(v.video_url, v.platform);
-            return (
-              <div key={v.video_id} className="col-md-6 col-lg-4">
-                <div className="card border-0 shadow-sm h-100">
-                  {embedUrl ? (
-                    <div className="ratio ratio-16x9">
-                      <iframe src={embedUrl} title={v.title} allowFullScreen style={{borderRadius:'8px 8px 0 0'}} />
+            {msg && <div className={msg.includes('✔') ? 'alert alert-success' : 'alert alert-danger'}>{msg}</div>}
+
+            {showForm && isAdmin && (
+                <form onSubmit={addVideo} style={{ background: '#fff', padding: 20, borderRadius: 10, marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,.08)' }}>
+                    <h4 style={{ marginBottom: 16 }}>إضافة فيديو جديد</h4>
+                    <div className="form-group">
+                        <label>عنوان الفيديو *</label>
+                        <input className="form-control" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required />
                     </div>
-                  ) : (
-                    <div className="d-flex align-items-center justify-content-center bg-dark text-warning" style={{height:'180px', borderRadius:'8px 8px 0 0', fontSize:'3rem'}}>🎬</div>
-                  )}
-                  <div className="card-body">
-                    <h5 className="card-title fw-bold">{v.title}</h5>
-                    {v.description && <p className="card-text text-muted small">{v.description}</p>}
-                    <div className="d-flex align-items-center justify-content-between mt-2 flex-wrap gap-2">
-                      <span className="badge bg-warning text-dark">{platforms[v.platform] || v.platform}</span>
-                      <div className="d-flex gap-2">
-                        <a href={v.video_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-warning">فتح الرابط</a>
-                        {isAdmin && <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(v.video_id)}>حذف</button>}
-                      </div>
+                    <div className="form-group" style={{ marginTop: 10 }}>
+                        <label>وصف مختصر</label>
+                        <input className="form-control" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
                     </div>
-                  </div>
+                    <div className="form-group" style={{ marginTop: 10 }}>
+                        <label>رابط الفيديو * (YouTube / Facebook / TikTok أو أي رابط)</label>
+                        <input className="form-control" value={form.url} onChange={e => setForm({...form, url: e.target.value})} placeholder="https://www.youtube.com/watch?v=..." required />
+                    </div>
+                    <div className="form-group" style={{ marginTop: 10 }}>
+                        <label>المنصة</label>
+                        <select className="form-control" value={form.platform} onChange={e => setForm({...form, platform: e.target.value})}>
+                            <option value="youtube">YouTube</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="other">أخرى</option>
+                        </select>
+                    </div>
+                    <button type="submit" className="btn btn-success" style={{ marginTop: 14 }}>إضافة</button>
+                </form>
+            )}
+
+            {videos.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 60, color: '#888' }}>
+                    <div style={{ fontSize: 48, marginBottom: 12 }}>🎬</div>
+                    <p>لا توجد فيديوهات توعوية بعد</p>
+                    {isAdmin && <p style={{ fontSize: 14 }}>اضغط "إضافة فيديو" لإضافة أول فيديو</p>}
                 </div>
-              </div>
-            );
-          })}
+            ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+                    {videos.map(v => {
+                        const ytId = v.platform === 'youtube' ? getYouTubeId(v.url) : null;
+                        return (
+                            <div key={v.id} style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,.1)' }}>
+                                {ytId ? (
+                                    <iframe
+                                        width="100%"
+                                        height="200"
+                                        src={`https://www.youtube.com/embed/${ytId}`}
+                                        title={v.title}
+                                        frameBorder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                        style={{ display: 'block' }}
+                                    />
+                                ) : (
+                                    <a href={v.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', background: '#f0f4ff', height: 200, alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+                                        <span style={{ fontSize: 48 }}>▶</span>
+                                    </a>
+                                )}
+                                <div style={{ padding: 14 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <h4 style={{ fontSize: '1rem', fontWeight: 600, margin: 0, flex: 1 }}>{v.title}</h4>
+                                        <span style={{ fontSize: 11, background: '#e8f4fd', color: '#1976d2', padding: '2px 8px', borderRadius: 12, marginInlineStart: 8, whiteSpace: 'nowrap' }}>
+                                            {PLATFORM_LABELS[v.platform] || v.platform}
+                                        </span>
+                                    </div>
+                                    {v.description && <p style={{ fontSize: 13, color: '#666', margin: '8px 0 0' }}>{v.description}</p>}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+                                        <a href={v.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#1976d2' }}>مشاهدة ↗</a>
+                                        {isAdmin && (
+                                            <button onClick={() => delVideo(v.id)} style={{ background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: 13 }}>حذف</button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }

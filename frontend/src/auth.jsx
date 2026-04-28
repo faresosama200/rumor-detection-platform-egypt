@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { api } from './api';
+import api from './api';
 
 const AuthContext = createContext();
 
@@ -21,22 +21,23 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const { data } = await api.post('/auth/login', { email, password });
+      const { data } = await api.post('/api/login', { email, password });
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.token) localStorage.setItem('token', data.token);
       return data.user;
     } catch (error) {
-      const message = error?.response?.data?.error || error?.message || 'Login failed';
+      const message = error?.response?.data?.error || error?.message || 'فشل تسجيل الدخول';
       throw new Error(message);
     }
   };
 
   const register = async (name, email, password) => {
     try {
-      const { data } = await api.post('/auth/register', { name, email, password });
+      const { data } = await api.post('/api/register', { name, email, password });
       return data;
     } catch (error) {
-      const message = error?.response?.data?.error || error?.message || 'Registration failed';
+      const message = error?.response?.data?.error || error?.message || 'فشل إنشاء الحساب';
       throw new Error(message);
     }
   };
@@ -44,6 +45,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
   };
 
   const value = {

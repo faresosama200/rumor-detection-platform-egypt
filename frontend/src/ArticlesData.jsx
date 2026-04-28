@@ -382,3 +382,24 @@ export const externalLinks = [
     category: 'إعلام'
   }
 ];
+
+function ArticlesPage() {
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '20px 16px' }}>
+      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: 20 }}>المقالات التوعوية</h2>
+      <div style={{ display: 'grid', gap: 16 }}>
+        {articlesData.map(a => (
+          <div key={a.id} style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, flex: 1 }}>{a.title}</h3>
+              {a.category && <span style={{ fontSize: 12, background: '#e8f4fd', color: '#1976d2', padding: '3px 10px', borderRadius: 12 }}>{a.category}</span>}
+            </div>
+            {a.summary && <p style={{ color: '#555', marginTop: 10, marginBottom: 0, fontSize: 14, lineHeight: 1.7 }}>{a.summary}</p>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default ArticlesPage;

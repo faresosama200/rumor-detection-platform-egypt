@@ -1,23 +1,30 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://backend-production-03bc.up.railway.app';
 
-export const api = axios.create({
+const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 20000,
+  headers: { 'Content-Type': 'application/json' }
+});
+
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
 });
 
 export const endpoints = {
-  dashboard: '/dashboard/stats',
-  reports: '/reports',
-  reportsWithReviews: '/reports-with-reviews',
-  reviewReports: '/review/reports',
-  search: '/search',
-  articles: '/articles',
-  sources: '/sources',
-  externalLinks: '/external-links',
-  verifyAi: '/verify-ai',
-  aiChat: '/ai-chat',
+  login: `${API_BASE_URL}/api/login`,
+  register: `${API_BASE_URL}/api/register`,
+  reports: `${API_BASE_URL}/api/reports`,
+  verifyAI: `${API_BASE_URL}/api/verify-ai`,
+  aiChat: `${API_BASE_URL}/api/ai-chat`,
+  articles: `${API_BASE_URL}/api/articles`,
+  videos: `${API_BASE_URL}/api/videos`,
+  sources: `${API_BASE_URL}/api/sources`,
+  adminStats: `${API_BASE_URL}/api/admin/stats`,
+  adminUsers: `${API_BASE_URL}/api/admin/users`,
 };
+
+export { api, API_BASE_URL };
+export default api;
