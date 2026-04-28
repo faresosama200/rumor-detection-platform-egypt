@@ -1,12 +1,12 @@
 {
-	"$schema": "https://railway.app/railway.schema.json",
-	"build": {
-		"builder": "NIXPACKS",
-		"buildCommand": "if [ -f package.json ]; then npm install; else cd fake-news-backend && npm install; fi"
-	},
-	"deploy": {
-		"startCommand": "if [ -f index.js ]; then node database.js && node index.js; else cd fake-news-backend && node database.js && node index.js; fi",
-		"restartPolicyType": "ON_FAILURE",
-		"restartPolicyMaxRetries": 5
-	}
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "if [ -f package.json ]; then npm install; else cd fake-news-backend && npm install; fi"
+  },
+  "deploy": {
+    "startCommand": "if [ -f index.js ]; then node database.js && node index.js; else cd fake-news-backend && node database.js && node index.js; fi",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
 }
