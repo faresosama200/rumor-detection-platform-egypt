@@ -17,7 +17,13 @@ function Login() {
       await login(email, pass);
       navigate('/report');
     } catch (ex) {
-      setErr(ex.response?.data?.message || 'خطأ في تسجيل الدخول');
+      if (ex.code === 'ECONNABORTED' || ex.message?.toLowerCase().includes('timeout')) {
+        setErr('تعذر الاتصال بالخادم. حاول مرة أخرى خلال لحظات.');
+      } else if (!ex.response) {
+        setErr('الخادم غير متاح حالياً. برجاء المحاولة لاحقاً.');
+      } else {
+        setErr(ex.response?.data?.message || 'خطأ في تسجيل الدخول');
+      }
     } finally { setLoading(false); }
   };
 
