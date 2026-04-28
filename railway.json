@@ -2,7 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "if [ -f package.json ]; then npm install; else cd fake-news-backend && npm install; fi"
+    "buildCommand": "if [ -d fake-news-backend ]; then cd fake-news-backend && npm install; else npm install; fi"
   },
   "deploy": {
     "startCommand": "if [ -f index.js ]; then node database.js && node index.js; else cd fake-news-backend && node database.js && node index.js; fi",
