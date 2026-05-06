@@ -470,6 +470,18 @@ const admin = (req, res, next) => {
   return next();
 };
 
+const ensureFieldInterviewsTable = async () => {
+  await q(`CREATE TABLE IF NOT EXISTS field_interviews (
+    interview_id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    place VARCHAR(255),
+    image_url VARCHAR(500),
+    created_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`).catch(() => {});
+};
+
 // ─── Health ───────────────────────────────────────────────────
 app.get('/',            (_req, res) => res.json({ message: 'منصة مكافحة الشائعات API', status: 'running' }));
 app.get('/api/health',  (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
@@ -864,9 +876,10 @@ app.post('/api/field-interviews', auth, admin, upload.single('image'), async (re
     const uploadedPath = req.file ? `/uploads/${req.file.filename}` : null;
     const finalImageUrl = image_url || uploadedPath;
     if (!title || !finalImageUrl) return res.status(400).json({ message: 'العنوان والصورة مطلوبان (رابط أو ملف)' });
+    const userId = req.user?.userId || req.user?.user_id || null;
     const result = await q(
       'INSERT INTO field_interviews (title, place, image_url, created_by) VALUES (?,?,?,?)',
-      [title, place || null, finalImageUrl, req.user.userId]
+      [title, place || null, finalImageUrl, userId]
     );
     res.status(201).json({ message: 'تمت إضافة الصورة الميدانية', interviewId: result.insertId });
   } catch (e) {

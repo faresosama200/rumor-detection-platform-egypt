@@ -6,7 +6,7 @@ import { AWARENESS_SECTIONS } from './awarenessContent';
 
 const OFFICIAL_ENTITIES = [
   { key: 'ministry', name: 'الوزارات',                     icon: 'ministry',  note: 'مصادر الحكومة الرسمية',             route: '/ministries' },
-  { key: 'media',    name: 'المجلس الإعلامي',              icon: 'media',     note: 'محتوى إعلامي موثق',                  url: 'https://media.gov.eg' },
+  { key: 'interior', name: 'وزارة الداخلية',               icon: 'media',     note: 'السلامة والأمان الداخلي',            url: 'https://www.moiegypt.gov.eg' },
   { key: 'supreme',  name: 'المجلس الأعلى لتنظيم الإعلام', icon: 'broadcast', note: 'تنظيم ومتابعة النشر',                url: 'https://www.scm.gov.eg' },
   { key: 'sis',      name: 'الهيئة العامة للاستعلامات',     icon: 'globe',     note: 'بيانات ومعلومات رسمية',              url: 'https://www.sis.gov.eg' },
 ];
