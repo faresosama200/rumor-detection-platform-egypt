@@ -126,13 +126,11 @@ export default function HomePage() {
       }
       if (entity?.url) {
         const win = window.open(entity.url, '_blank', 'noopener,noreferrer');
-        if (!win) {
-          alert('تعذر فتح الرابط. يرجى التحقق من إعدادات المتصفح');
-        }
+        if (!win) window.location.href = entity.url;
       }
     } catch (error) {
       console.error('خطأ في فتح الرابط:', error);
-      alert('حدث خطأ في فتح الرابط');
+      if (entity?.url) window.location.href = entity.url;
     }
   };
 
