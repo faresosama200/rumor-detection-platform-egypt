@@ -175,7 +175,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const feedId = setInterval(fetchFeed, 30000);
+    const feedId = setInterval(fetchFeed, 10000);
     const liveId = setInterval(() => {
       fetchStats();
       fetchRumors();
@@ -243,8 +243,12 @@ export default function HomePage() {
                 <span className="top-ticker-kind">
                   {item.type === 'report'
                     ? <><AppIcon name="report" size={12} /> بلاغ</>
+                    : item.type === 'article'
+                      ? <><AppIcon name="articles" size={12} /> مقال</>
                     : item.type === 'rumor'
                       ? <><AppIcon name="rumor" size={12} /> شائعة</>
+                      : item.type === 'world-rumor'
+                        ? <><AppIcon name="globe" size={12} /> رصد عالمي</>
                       : <><AppIcon name="media" size={12} /> تحديث</>}
                 </span>
                 <span>{item.title}</span>
@@ -260,8 +264,12 @@ export default function HomePage() {
                 <span className="top-ticker-kind">
                   {item.type === 'report'
                     ? <><AppIcon name="report" size={12} /> بلاغ</>
+                    : item.type === 'article'
+                      ? <><AppIcon name="articles" size={12} /> مقال</>
                     : item.type === 'rumor'
                       ? <><AppIcon name="rumor" size={12} /> شائعة</>
+                      : item.type === 'world-rumor'
+                        ? <><AppIcon name="globe" size={12} /> رصد عالمي</>
                       : <><AppIcon name="media" size={12} /> تحديث</>}
                 </span>
                 <span>{item.title}</span>
@@ -437,7 +445,7 @@ export default function HomePage() {
                 ? <p className="panel-empty">لا توجد شائعات مرصودة حالياً</p>
                 : <div className="art-list">{rumors.slice(0, 5).map((r, i) => (
                     <div key={i} className="art-row">
-                      <span className="art-tag red">شائعة</span>
+                      <span className="art-tag red">{r.type === 'world-rumor' ? 'رصد عالمي' : 'شائعة'}</span>
                       <span className="art-row-title">{r.title}</span>
                     </div>
                   ))}</div>

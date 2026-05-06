@@ -78,6 +78,108 @@ async function getTableColumns(tableName) {
     return new Set();
   }
 }
+
+const WORLD_RUMOR_FEEDS = [
+  'https://feeds.bbci.co.uk/arabic/world/rss.xml',
+  'https://www.aljazeera.net/aljazeerarss/arabic/news',
+  'https://www.skynewsarabia.com/web/rss',
+];
+const WORLD_RUMOR_KEYWORDS = [
+  'شائعة', 'إشاعة', 'مضلل', 'كاذب', 'تضليل', 'تشويه', 'مفبرك', 'حرب معلومات', 'عاجل', 'تداول'
+];
+let worldRumorsCache = { at: 0, items: [] };
+
+const decodeXmlEntities = (text = '') => String(text)
+  .replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1')
+  .replace(/&amp;/g, '&')
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/&#39;/g, "'")
+  .replace(/&nbsp;/g, ' ')
+  .trim();
+
+const stripHtmlTags = (text = '') => decodeXmlEntities(String(text).replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+
+function parseRssItems(xmlText = '') {
+  const items = [];
+  const blocks = String(xmlText).match(/<item\b[\s\S]*?<\/item>/gi) || [];
+  for (const block of blocks) {
+    const title = decodeXmlEntities((block.match(/<title>([\s\S]*?)<\/title>/i) || [])[1] || '');
+    const link = decodeXmlEntities((block.match(/<link>([\s\S]*?)<\/link>/i) || [])[1] || '');
+    const pubDateRaw = decodeXmlEntities((block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i) || [])[1] || '');
+    const descRaw = decodeXmlEntities((block.match(/<description>([\s\S]*?)<\/description>/i) || [])[1] || '');
+    if (!title) continue;
+    items.push({
+      title: stripHtmlTags(title),
+      link,
+      description: stripHtmlTags(descRaw),
+      created_at: pubDateRaw && !Number.isNaN(Date.parse(pubDateRaw))
+        ? new Date(pubDateRaw).toISOString()
+        : new Date().toISOString(),
+    });
+  }
+  return items;
+}
+
+async function fetchWorldRumors(limit = 10) {
+  const now = Date.now();
+  if (now - worldRumorsCache.at < 5 * 60 * 1000 && worldRumorsCache.items.length) {
+    return worldRumorsCache.items.slice(0, limit);
+  }
+
+  const aggregated = [];
+  for (const feedUrl of WORLD_RUMOR_FEEDS) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      let response;
+      try {
+        response = await fetch(feedUrl, {
+          method: 'GET',
+          headers: { 'User-Agent': 'RumorPlatform/1.0 (+world-watch)' },
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+      if (!response.ok) continue;
+      const xml = await response.text();
+      const parsed = parseRssItems(xml).map(item => ({
+        ...item,
+        feed: feedUrl,
+      }));
+      aggregated.push(...parsed);
+    } catch {
+      // Ignore failed external feed and continue with other sources.
+    }
+  }
+
+  const seen = new Set();
+  const prepared = aggregated
+    .filter(item => {
+      const hay = `${item.title} ${item.description}`;
+      const isRumorLike = WORLD_RUMOR_KEYWORDS.some(k => hay.includes(k));
+      const key = item.title.toLowerCase();
+      if (!isRumorLike || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    .slice(0, Math.max(limit, 20))
+    .map((item, idx) => ({
+      id: `world-${idx}-${Buffer.from(item.title).toString('base64').slice(0, 10)}`,
+      type: 'world-rumor',
+      status: 'watch',
+      title: item.title,
+      created_at: item.created_at,
+      source_url: item.link,
+    }));
+
+  worldRumorsCache = { at: now, items: prepared };
+  return prepared.slice(0, limit);
+}
+
 const getGroqKey       = () => process.env.GROQ_API_KEY       || '';
 const getGeminiKey     = () => process.env.GEMINI_API_KEY     || process.env.GOOGLE_API_KEY || '';
 const getOpenRouterKey = () => process.env.OPENROUTER_API_KEY || '';
@@ -820,8 +922,7 @@ app.get('/api/trending-rumors', async (req, res) => {
     // Fallback: if there are no confirmed rumors yet, surface likely rumor-related recent items.
     if (!items.length) {
       const recentReports = await q(
-        'SELECT report_id as id, title, created_at, status FROM reports ORDER BY COALESCE(updated_at, created_at) DESC LIMIT ?',
-        [Math.max(10, limit)]
+        `SELECT report_id as id, title, created_at, status FROM reports ORDER BY COALESCE(updated_at, created_at) DESC LIMIT ${Math.max(10, limit)}`
       ).catch(() => []);
 
       const recentRumorLike = recentReports
@@ -849,6 +950,12 @@ app.get('/api/trending-rumors', async (req, res) => {
           created_at: r.created_at,
         }));
       }
+    }
+
+    // World events fallback: automatically surface rumor-like global headlines when local data is empty.
+    if (!items.length) {
+      const worldRumors = await fetchWorldRumors(limit).catch(() => []);
+      items = Array.isArray(worldRumors) ? worldRumors : [];
     }
 
     res.json({ items, total: items.length });
@@ -933,21 +1040,22 @@ app.get('/api/public-stats', async (_req, res) => {
 
 app.get('/api/latest-feed', async (req, res) => {
   try {
-    const statsStartAt = await getStatsStartAt();
     const limit = Math.max(1, Math.min(parseInt(req.query.limit || '8', 10), 20));
-    const reports = await q(
-      'SELECT title, created_at FROM reports WHERE created_at >= ? ORDER BY created_at DESC LIMIT ?',
-      [statsStartAt, limit]
-    ).catch(() => []);
-    const rumors = await q(
-      "SELECT title, created_at FROM articles WHERE category='rumors' ORDER BY created_at DESC LIMIT ?",
-      [limit]
-    ).catch(() => []);
+    const reports = await q(`SELECT title, created_at FROM reports ORDER BY COALESCE(updated_at, created_at) DESC LIMIT ${limit}`).catch(() => []);
+
+    let articles = await q(`SELECT title, created_at FROM articles WHERE is_published=1 ORDER BY created_at DESC LIMIT ${limit}`).catch(() => []);
+    if (!articles.length) {
+      articles = await q(`SELECT title, created_at FROM articles ORDER BY created_at DESC LIMIT ${limit}`).catch(() => []);
+    }
+
+    const rumors = await q(`SELECT title, created_at FROM articles WHERE category IN ('rumors','rumor') ORDER BY created_at DESC LIMIT ${limit}`).catch(() => []);
 
     const items = [
       ...reports.map(r => ({ type: 'report', title: r.title, created_at: r.created_at })),
+      ...articles.map(a => ({ type: 'article', title: a.title, created_at: a.created_at })),
       ...rumors.map(r => ({ type: 'rumor', title: r.title, created_at: r.created_at })),
     ]
+      .filter(x => x?.title)
       .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
       .slice(0, limit);
 
