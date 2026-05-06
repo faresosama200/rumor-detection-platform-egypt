@@ -482,6 +482,15 @@ const ensureFieldInterviewsTable = async () => {
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`).catch(() => {});
 };
 
+const parsePublishedFlag = (value, defaultValue = 1) => {
+  if (value === undefined || value === null || value === '') return defaultValue;
+  if (typeof value === 'boolean') return value ? 1 : 0;
+  const norm = String(value).trim().toLowerCase();
+  if (['0', 'false', 'no', 'off'].includes(norm)) return 0;
+  if (['1', 'true', 'yes', 'on'].includes(norm)) return 1;
+  return defaultValue;
+};
+
 // ─── Health ───────────────────────────────────────────────────
 app.get('/',            (_req, res) => res.json({ message: 'منصة مكافحة الشائعات API', status: 'running' }));
 app.get('/api/health',  (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
@@ -759,40 +768,61 @@ app.post('/api/articles', auth, admin, upload.single('image'), async (req, res) 
     const uploadedImg = req.file ? `/uploads/${req.file.filename}` : null;
     const { title, content, category, tags, is_published, image_url, source_name, source_url } = req.body;
     if (!title || !content) return res.status(400).json({ message: 'العنوان والمحتوى مطلوبان' });
-    const result = await q(
-      'INSERT INTO articles (title,content,category,tags,is_published,created_by,image_url,source_name,source_url) VALUES (?,?,?,?,?,?,?,?,?)',
-      [
-        title,
-        content,
-        category || 'awareness',
-        tags || null,
-        is_published !== false ? 1 : 0,
-        req.user.userId,
-        image_url || uploadedImg || null,
-        source_name || null,
-        source_url || null,
-      ]
-    );
-    res.status(201).json({ message: 'تم إضافة المقال', articleId: result.insertId });
+    const articleCols = await getTableColumns('articles');
+    if (!articleCols.has('title') || !articleCols.has('content')) {
+      return res.status(500).json({ message: 'جدول المقالات غير مكتمل: الأعمدة الأساسية غير موجودة' });
+    }
+
+    const cols = ['title', 'content'];
+    const vals = [title, content];
+    const userId = req.user?.userId || req.user?.user_id || null;
+
+    if (articleCols.has('category')) cols.push('category'), vals.push(category || 'awareness');
+    if (articleCols.has('tags')) cols.push('tags'), vals.push(tags || null);
+    if (articleCols.has('is_published')) cols.push('is_published'), vals.push(parsePublishedFlag(is_published, 1));
+    if (articleCols.has('created_by')) cols.push('created_by'), vals.push(userId);
+    if (articleCols.has('image_url')) cols.push('image_url'), vals.push(uploadedImg || image_url || null);
+    if (articleCols.has('source_name')) cols.push('source_name'), vals.push(source_name || null);
+    if (articleCols.has('source_url')) cols.push('source_url'), vals.push(source_url || null);
+
+    const sql = `INSERT INTO articles (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`;
+    const result = await q(sql, vals);
+    return res.status(201).json({ message: 'تم إضافة المقال', articleId: result.insertId });
   } catch (e) {
-    // Try without image_url if column doesn't exist
-    try {
-      const { title, content, category, tags, is_published } = req.body;
-      const result = await q(
-        'INSERT INTO articles (title,content,category,tags,is_published,created_by) VALUES (?,?,?,?,?,?)',
-        [title, content, category || 'awareness', tags || null, is_published !== false ? 1 : 0, req.user.userId]
-      );
-      res.status(201).json({ message: 'تم إضافة المقال', articleId: result.insertId });
-    } catch (e2) { res.status(500).json({ message: 'خطأ', error: e2.message }); }
+    res.status(500).json({ message: 'خطأ في إضافة المقال', error: e.message });
   }
 });
 
 app.put('/api/articles/:id', auth, admin, upload.single('image'), async (req, res) => {
   try {
     const uploadedImg = req.file ? `/uploads/${req.file.filename}` : null;
-    const { title, content, category, tags, is_published, image_url } = req.body;
-    await q('UPDATE articles SET title=?,content=?,category=?,tags=?,is_published=?,image_url=? WHERE article_id=?',
-      [title, content, category || 'awareness', tags || null, is_published !== false ? 1 : 0, image_url || uploadedImg || null, req.params.id]);
+    const { title, content, category, tags, is_published, image_url, source_name, source_url } = req.body;
+    if (!title || !content) return res.status(400).json({ message: 'العنوان والمحتوى مطلوبان' });
+
+    const articleCols = await getTableColumns('articles');
+    const hasArticleId = articleCols.has('article_id');
+    const hasId = articleCols.has('id');
+    const pkCol = hasArticleId ? 'article_id' : (hasId ? 'id' : null);
+    if (!pkCol) return res.status(500).json({ message: 'تعذر تحديد المفتاح الأساسي لجدول المقالات' });
+
+    const sets = [];
+    const vals = [];
+    if (articleCols.has('title')) sets.push('title=?'), vals.push(title);
+    if (articleCols.has('content')) sets.push('content=?'), vals.push(content);
+    if (articleCols.has('category')) sets.push('category=?'), vals.push(category || 'awareness');
+    if (articleCols.has('tags')) sets.push('tags=?'), vals.push(tags || null);
+    if (articleCols.has('is_published')) sets.push('is_published=?'), vals.push(parsePublishedFlag(is_published, 1));
+    if (articleCols.has('source_name')) sets.push('source_name=?'), vals.push(source_name || null);
+    if (articleCols.has('source_url')) sets.push('source_url=?'), vals.push(source_url || null);
+    if (articleCols.has('image_url') && (uploadedImg || image_url !== undefined)) {
+      sets.push('image_url=?');
+      vals.push(uploadedImg || image_url || null);
+    }
+
+    if (!sets.length) return res.status(400).json({ message: 'لا توجد بيانات للتحديث' });
+
+    vals.push(req.params.id);
+    await q(`UPDATE articles SET ${sets.join(',')} WHERE ${pkCol}=?`, vals);
     res.json({ message: 'تم التعديل' });
   } catch (e) { res.status(500).json({ message: 'خطأ', error: e.message }); }
 });
