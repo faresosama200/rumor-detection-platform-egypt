@@ -7,6 +7,7 @@ import AIChat              from './AIChat';
 import AdvancedAIDetection from './AdvancedAIDetection';
 import ArticlesPage        from './ArticlesData';
 import HomePage            from './HomePage';
+import AwarenessSectionPage from './AwarenessSectionPage';
 import VideoAwareness      from './VideoAwareness';
 import AdminArticles       from './AdminArticles';
 import ReportPage          from './ReportPage';
@@ -79,6 +80,7 @@ function AppLayout() {
           <Routes>
             <Route path="/"               element={<Navigate to="/home" replace />} />
             <Route path="/home"           element={<HomePage />} />
+            <Route path="/awareness/:slug" element={<AwarenessSectionPage />} />
             <Route path="/login"          element={<Login />} />
             <Route path="/register"       element={<Register />} />
             <Route path="/report"         element={<ReportPage />} />

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE } from './api';
 import AppIcon from './AppIcon';
+import { AWARENESS_SECTIONS } from './awarenessContent';
 
 const OFFICIAL_ENTITIES = [
   { key: 'ministry', name: 'الوزارات',                     icon: 'ministry',  note: 'مصادر الحكومة الرسمية',             route: '/ministries' },
@@ -13,7 +14,7 @@ const OFFICIAL_ENTITIES = [
 /* ── Donut Chart Component ── */
 function DonutChart({ pending = 0, trueVal = 0, falseVal = 0 }) {
   const total = pending + trueVal + falseVal;
-  if (total === 0) return null;
+  const displayTotal = total === 0 ? 1 : total;
 
   const segments = [
     { label: 'مفندة',      value: falseVal,  color: '#ef4444' },
@@ -26,7 +27,7 @@ function DonutChart({ pending = 0, trueVal = 0, falseVal = 0 }) {
   let currentAngle = -Math.PI / 2;
 
   const slices = segments.map(seg => {
-    const fraction = seg.value / total;
+    const fraction = total === 0 ? (1 / 3) : (seg.value / displayTotal);
     const angle = fraction * 2 * Math.PI - gap;
     const startAngle = currentAngle + gap / 2;
     currentAngle += fraction * 2 * Math.PI;
@@ -229,17 +230,6 @@ export default function HomePage() {
     } catch {}
   };
 
-  const AWARENESS_SECTIONS = [
-    { icon: 'brain', title: 'التفكير النقدي',        desc: 'تعلّم كيف تحلل المعلومات قبل تصديقها', path: '/articles?category=critical-thinking' },
-    { icon: 'phone', title: 'الإعلام الاجتماعي',     desc: 'كيف تتحقق من صحة المنشورات',         path: '/articles?category=social-media' },
-    { icon: 'search', title: 'التحقق من الصور',       desc: 'أدوات واساليب البحث العكسي',          path: '/articles?category=image-verify' },
-    { icon: 'trusted', title: 'مصادر موثوقة',          desc: 'قائمة بالمصادر الإعلامية المعتمدة',   path: '/articles?category=trusted-sources' },
-    { icon: 'rumor',  title: 'حرب المعلومات',        desc: 'أساليب التضليل والتشويه المعلوماتي',  path: '/articles?category=info-war' },
-    { icon: 'shield',  title: 'الحماية الرقمية',      desc: 'كيف تحمي نفسك من الاختراق والتلاعب', path: '/articles?category=digital-safety' },
-    { icon: 'media', title: 'الصحافة المدنية',       desc: 'دورك في نشر الوعي المجتمعي',          path: '/articles?category=civic-journalism' },
-    { icon: 'education', title: 'التوعية المدرسية',      desc: 'محتوى تعليمي للطلاب والشباب',         path: '/articles?category=education' },
-  ];
-
   return (
     <div className="home-page">
 
@@ -315,7 +305,7 @@ export default function HomePage() {
       )}
 
       {/* ── Dashboard Charts ── */}
-      {stats && (stats.totalReports > 0 || stats.totalArticles > 0) && (
+      {stats && (
         <section style={{ padding: '28px 16px 8px', direction: 'rtl' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
             <span style={{ fontSize: 22 }}>📊</span>
@@ -426,7 +416,7 @@ export default function HomePage() {
           <div className="panel-body">
             <div className="awareness-grid">
               {AWARENESS_SECTIONS.map((s, i) => (
-                <button key={i} className="aware-btn" onClick={() => navigate(s.path)}>
+                <button key={i} className="aware-btn" onClick={() => navigate(`/awareness/${s.slug}`)}>
                   <span className="aware-icon"><AppIcon name={s.icon} size={18} /></span>
                   <span className="aware-title">{s.title}</span>
                   <span className="aware-desc">{s.desc}</span>

@@ -1,17 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import AppIcon from './AppIcon';
-
-const EDUCATIONAL = [
-  { label: 'الوالدين', value: 'parents' },
-  { label: 'الأطفال',  value: 'children' },
-  { label: 'الديني',   value: 'religious' },
-  { label: 'سياسي',    value: 'political' },
-  { label: 'فني',      value: 'art' },
-  { label: 'ثقافي',    value: 'culture' },
-  { label: 'تجاري',    value: 'commercial' },
-  { label: 'زراعي',    value: 'agriculture' },
-];
+import { AWARENESS_SECTIONS } from './awarenessContent';
 
 const RUMOR = [
   { label: 'أحدث الشائعات', value: 'rumors' },
@@ -46,9 +36,9 @@ export default function Sidebar({ isAdmin, isOpen, onClose }) {
             </button>
             <div className={`sb-sub ${eduOpen ? 'open' : ''}`}>
               <button className="sb-sub-link" onClick={() => go('/articles')}><AppIcon name="articles" size={14} /> جميع المقالات</button>
-              {EDUCATIONAL.map(c => (
-                <button key={c.value} className="sb-sub-link" onClick={() => go('/articles?category=' + c.value)}>
-                  <AppIcon name="articles" size={14} /> {c.label}
+              {AWARENESS_SECTIONS.map(section => (
+                <button key={section.slug} className="sb-sub-link" onClick={() => go('/awareness/' + section.slug)}>
+                  <AppIcon name={section.icon} size={14} /> {section.title}
                 </button>
               ))}
             </div>

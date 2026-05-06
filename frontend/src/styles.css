@@ -914,6 +914,62 @@ input, textarea, select { font-family: inherit; direction: rtl; }
   background: #f4f9ff;
 }
 
+/* Awareness section pages */
+.awareness-section-page .page-hero {
+  margin-bottom: 16px;
+}
+.awareness-hero-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 18px;
+  margin: 0 auto 12px;
+  background: rgba(11, 99, 181, .12);
+  color: #0b63b5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.awareness-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.awareness-detail-card {
+  background: #fff;
+  border: 1px solid #cfe2f8;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: var(--sh-sm);
+}
+.awareness-detail-card h3 {
+  color: #0b63b5;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.awareness-detail-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.awareness-detail-card li {
+  font-size: 13px;
+  color: #16466f;
+  background: #f5f9ff;
+  border: 1px solid #e0ecfb;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.awareness-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
 /* Field interview cards near footer */
 .field-footer-gallery {
   padding: 16px 24px 26px;
@@ -989,6 +1045,7 @@ input, textarea, select { font-family: inherit; direction: rtl; }
 @media (max-width: 980px) {
   .official-home-boxes { grid-template-columns: repeat(2, minmax(160px, 1fr)); padding: 14px 14px 0; }
   .awareness-grid { grid-template-columns: 1fr; }
+  .awareness-detail-grid { grid-template-columns: 1fr; }
   .field-footer-gallery { padding: 14px; }
   .field-footer-list { grid-template-columns: 1fr 1fr; }
   .field-form { grid-template-columns: 1fr; }
