@@ -42,6 +42,42 @@ const dbCfg = {
 let _pool;
 const getPool = () => { if (!_pool) _pool = mysql.createPool(dbCfg); return _pool; };
 const q = async (sql, p = []) => { const [r] = await getPool().execute(sql, p); return r; };
+const APP_STATS_BASELINE_KEY = 'stats_start_at';
+let _statsStartAtCache = null;
+
+async function ensureAppSettingsTable() {
+  await q(`CREATE TABLE IF NOT EXISTS app_settings (
+    key_name VARCHAR(120) PRIMARY KEY,
+    value_text VARCHAR(255) NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`).catch(() => {});
+}
+
+async function getStatsStartAt() {
+  if (_statsStartAtCache) return _statsStartAtCache;
+  await ensureAppSettingsTable();
+  const rows = await q('SELECT value_text FROM app_settings WHERE key_name=? LIMIT 1', [APP_STATS_BASELINE_KEY]).catch(() => []);
+  if (rows?.length && rows[0].value_text) {
+    _statsStartAtCache = rows[0].value_text;
+    return _statsStartAtCache;
+  }
+  const nowIso = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  await q(
+    'INSERT INTO app_settings (key_name, value_text) VALUES (?, ?) ON DUPLICATE KEY UPDATE value_text=VALUES(value_text)',
+    [APP_STATS_BASELINE_KEY, nowIso]
+  ).catch(() => {});
+  _statsStartAtCache = nowIso;
+  return _statsStartAtCache;
+}
+
+async function getTableColumns(tableName) {
+  try {
+    const rows = await q(`SHOW COLUMNS FROM ${tableName}`);
+    return new Set((rows || []).map(r => String(r.Field || '').toLowerCase()));
+  } catch {
+    return new Set();
+  }
+}
 const getGroqKey       = () => process.env.GROQ_API_KEY       || '';
 const getGeminiKey     = () => process.env.GEMINI_API_KEY     || process.env.GOOGLE_API_KEY || '';
 const getOpenRouterKey = () => process.env.OPENROUTER_API_KEY || '';
@@ -577,14 +613,31 @@ app.get('/api/articles', async (req, res) => {
       }
     } catch {}
 
-    let sql = 'SELECT a.*, u.name as author FROM articles a LEFT JOIN users u ON a.created_by=u.user_id WHERE a.is_published=1';
+    const articleCols = await getTableColumns('articles');
+    const hasCreatedBy = articleCols.has('created_by');
+    const hasPublished = articleCols.has('is_published');
+    const hasCategory = articleCols.has('category');
+    const hasCreatedAt = articleCols.has('created_at');
+    const hasArticleId = articleCols.has('article_id');
+
+    let sql = hasCreatedBy
+      ? 'SELECT a.*, u.name as author FROM articles a LEFT JOIN users u ON a.created_by=u.user_id WHERE 1=1'
+      : 'SELECT a.* FROM articles a WHERE 1=1';
     const p = [];
-    if (category) { sql += ' AND a.category=?'; p.push(category); }
-    sql += ' ORDER BY a.created_at DESC';
-    if (limit) { sql += ' LIMIT ?'; p.push(parseInt(limit)); }
+    if (hasPublished) sql += ' AND a.is_published=1';
+    if (category && hasCategory) { sql += ' AND a.category=?'; p.push(category); }
+    if (hasCreatedAt) sql += ' ORDER BY a.created_at DESC';
+    else if (hasArticleId) sql += ' ORDER BY a.article_id DESC';
+    const limitNum = parseInt(limit, 10);
+    if (Number.isFinite(limitNum) && limitNum > 0) {
+      sql += ` LIMIT ${Math.min(limitNum, 100)}`;
+    }
     const rows = await q(sql, p);
     res.json(rows);
-  } catch (e) { res.status(500).json({ message: 'خطأ', error: e.message }); }
+  } catch (e) {
+    console.error('GET /api/articles error:', e);
+    res.status(500).json({ message: 'خطأ', error: e?.message || String(e) || 'unknown_error' });
+  }
 });
 
 app.post('/api/articles', auth, admin, upload.single('image'), async (req, res) => {
@@ -838,50 +891,53 @@ app.post('/api/articles/sync-real', auth, admin, async (_req, res) => {
 // ─── Admin Dashboard ──────────────────────────────────────────
 app.get('/api/dashboard', auth, admin, async (_req, res) => {
   try {
-    const safeCount = async (sql) => {
+    const statsStartAt = await getStatsStartAt();
+    const safeCount = async (sql, params = []) => {
       try {
-        const rows = await q(sql);
+        const rows = await q(sql, params);
         return Number(rows?.[0]?.total || 0);
       } catch {
         return 0;
       }
     };
 
-    const totalReports  = await safeCount('SELECT COUNT(*) as total FROM reports');
-    const pendingReports = await safeCount("SELECT COUNT(*) as total FROM reports WHERE status IN ('pending','investigating')");
-    const trueReports   = await safeCount("SELECT COUNT(*) as total FROM reports WHERE status IN ('true','fact','partial')");
-    const falseReports  = await safeCount("SELECT COUNT(*) as total FROM reports WHERE status IN ('false','rumor','misleading')");
-    const totalArticles = await safeCount('SELECT COUNT(*) as total FROM articles');
+    const totalReports  = await safeCount('SELECT COUNT(*) as total FROM reports WHERE created_at >= ?', [statsStartAt]);
+    const pendingReports = await safeCount("SELECT COUNT(*) as total FROM reports WHERE created_at >= ? AND status IN ('pending','investigating')", [statsStartAt]);
+    const trueReports   = await safeCount("SELECT COUNT(*) as total FROM reports WHERE created_at >= ? AND status IN ('true','fact','partial')", [statsStartAt]);
+    const falseReports  = await safeCount("SELECT COUNT(*) as total FROM reports WHERE created_at >= ? AND status IN ('false','rumor','misleading')", [statsStartAt]);
+    const totalArticles = await safeCount('SELECT COUNT(*) as total FROM articles WHERE is_published=1');
     const totalSources  = await safeCount('SELECT COUNT(*) as total FROM sources');
-    res.json({ totalReports, pendingReports, trueReports, falseReports, totalArticles, totalSources });
+    res.json({ totalReports, pendingReports, trueReports, falseReports, totalArticles, totalSources, statsStartAt });
   } catch (e) { res.status(500).json({ message: 'خطأ', error: e.message }); }
 });
 
 app.get('/api/public-stats', async (_req, res) => {
   try {
-    const safeCount = async (sql) => {
+    const statsStartAt = await getStatsStartAt();
+    const safeCount = async (sql, params = []) => {
       try {
-        const rows = await q(sql);
+        const rows = await q(sql, params);
         return Number(rows?.[0]?.total || 0);
       } catch {
         return 0;
       }
     };
 
-    const totalReports = await safeCount('SELECT COUNT(*) as total FROM reports');
-    const pendingReports = await safeCount("SELECT COUNT(*) as total FROM reports WHERE status IN ('pending','investigating')");
+    const totalReports = await safeCount('SELECT COUNT(*) as total FROM reports WHERE created_at >= ?', [statsStartAt]);
+    const pendingReports = await safeCount("SELECT COUNT(*) as total FROM reports WHERE created_at >= ? AND status IN ('pending','investigating')", [statsStartAt]);
     const totalArticles = await safeCount('SELECT COUNT(*) as total FROM articles WHERE is_published=1');
     const totalUsers = await safeCount('SELECT COUNT(*) as total FROM users');
-    res.json({ totalReports, pendingReports, totalArticles, totalUsers });
+    res.json({ totalReports, pendingReports, totalArticles, totalUsers, statsStartAt });
   } catch (e) { res.status(500).json({ message: 'خطأ', error: e.message }); }
 });
 
 app.get('/api/latest-feed', async (req, res) => {
   try {
+    const statsStartAt = await getStatsStartAt();
     const limit = Math.max(1, Math.min(parseInt(req.query.limit || '8', 10), 20));
     const reports = await q(
-      'SELECT title, created_at FROM reports ORDER BY created_at DESC LIMIT ?',
-      [limit]
+      'SELECT title, created_at FROM reports WHERE created_at >= ? ORDER BY created_at DESC LIMIT ?',
+      [statsStartAt, limit]
     ).catch(() => []);
     const rumors = await q(
       "SELECT title, created_at FROM articles WHERE category='rumors' ORDER BY created_at DESC LIMIT ?",
@@ -898,6 +954,21 @@ app.get('/api/latest-feed', async (req, res) => {
     res.json({ items, total: items.length });
   } catch (e) {
     res.status(500).json({ message: 'خطأ في جلب الشريط العلوي', error: e.message });
+  }
+});
+
+app.post('/api/stats/reset-baseline', auth, admin, async (req, res) => {
+  try {
+    const startAt = req.body?.startAt || new Date().toISOString().slice(0, 19).replace('T', ' ');
+    await ensureAppSettingsTable();
+    await q(
+      'INSERT INTO app_settings (key_name, value_text) VALUES (?, ?) ON DUPLICATE KEY UPDATE value_text=VALUES(value_text)',
+      [APP_STATS_BASELINE_KEY, startAt]
+    );
+    _statsStartAtCache = startAt;
+    res.json({ message: 'تمت إعادة ضبط خط بداية الإحصائيات', statsStartAt: startAt });
+  } catch (e) {
+    res.status(500).json({ message: 'خطأ في إعادة ضبط الإحصائيات', error: e.message });
   }
 });
 
