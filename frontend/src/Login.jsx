@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useAuth } from './auth';
 import { useNavigate, Link } from 'react-router-dom';
 
-function Login() {
-  const { login }          = useAuth();
-  const navigate           = useNavigate();
-  const [email, setEmail]  = useState('');
-  const [pass, setPass]    = useState('');
-  const [err, setErr]      = useState('');
+export default function Login() {
+  const { login } = useAuth();
+  const navigate  = useNavigate();
+  const [email, setEmail]     = useState('');
+  const [pass, setPass]       = useState('');
+  const [err, setErr]         = useState('');
   const [loading, setLoading] = useState(false);
 
   const submit = async e => {
@@ -15,47 +15,36 @@ function Login() {
     setErr(''); setLoading(true);
     try {
       await login(email, pass);
-      navigate('/report');
+      navigate('/home');
     } catch (ex) {
-      if (ex.code === 'ECONNABORTED' || ex.message?.toLowerCase().includes('timeout')) {
-        setErr('تعذر الاتصال بالخادم. حاول مرة أخرى خلال لحظات.');
-      } else if (!ex.response) {
-        setErr('الخادم غير متاح حالياً. برجاء المحاولة لاحقاً.');
-      } else {
-        setErr(ex.response?.data?.message || 'خطأ في تسجيل الدخول');
-      }
+      if (!ex.response) setErr('الخادم غير متاح حالياً. برجاء المحاولة لاحقاً.');
+      else setErr(ex.response?.data?.message || 'بيانات غير صحيحة');
     } finally { setLoading(false); }
   };
 
   return (
-    <div className="auth-wrapper">
+    <div className="auth-page">
       <div className="auth-card">
         <div className="auth-logo">🛡️</div>
-        <h2>تسجيل الدخول</h2>
-        <p className="auth-subtitle">منصة مكافحة الشائعات</p>
-        {err && <div className="alert alert-danger">{err}</div>}
-        <form onSubmit={submit}>
-          <div className="form-group">
+        <h2 className="auth-title">تسجيل الدخول</h2>
+        <p className="auth-sub">منصة مكافحة الشائعات — حروب الجيل الرابع</p>
+        {err && <div className="auth-error">{err}</div>}
+        <form onSubmit={submit} className="auth-form">
+          <div className="field-group">
             <label>البريد الإلكتروني</label>
-            <input className="form-control" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="example@email.com" />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="example@email.com" autoComplete="email" />
           </div>
-          <div className="form-group" style={{ marginTop: 14 }}>
+          <div className="field-group">
             <label>كلمة المرور</label>
-            <input className="form-control" type="password" value={pass} onChange={e => setPass(e.target.value)} required placeholder="••••••••" />
+            <input type="password" value={pass} onChange={e => setPass(e.target.value)} required placeholder="••••••••" autoComplete="current-password" />
           </div>
-          <button className="btn btn-warning w-100 mt-3" type="submit" disabled={loading}>
-            {loading ? 'جارٍ الدخول...' : 'دخول'}
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? <span className="spinner" /> : '🔐 دخول'}
           </button>
         </form>
-        <p className="mt-3 text-center">
-          ليس لديك حساب؟ <Link to="/register">سجّل الآن</Link>
-        </p>
-        <div className="demo-hint">
-          <small>🔑 تجريبي: admin@platform.com / admin123</small>
-        </div>
+        <p className="auth-footer">ليس لديك حساب؟ <Link to="/register">سجّل الآن</Link></p>
+        <div className="auth-demo">🔑 تجريبي: admin@platform.com / admin123</div>
       </div>
     </div>
   );
 }
-
-export default Login;

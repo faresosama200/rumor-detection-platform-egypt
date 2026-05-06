@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://backend-production-03bc.up.railway.app';
 
@@ -14,6 +14,19 @@ api.interceptors.request.use(cfg => {
   return cfg;
 });
 
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error?.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('name');
+      localStorage.removeItem('userId');
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const endpoints = {
   login:     '/api/login',
   register:  '/api/register',
@@ -28,4 +41,6 @@ export const endpoints = {
 };
 
 export { api, API_BASE_URL };
+export const API_BASE = API_BASE_URL;
 export default api;
+

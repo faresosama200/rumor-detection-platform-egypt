@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from './api';
 
-const EMPTY = { title: '', content: '', category: 'awareness', tags: '', is_published: true };
+const EMPTY = { title: '', content: '', category: 'awareness', tags: '', image_url: '', imageFile: null, is_published: true };
 
 function AdminArticles() {
   const [articles, setArticles] = useState([]);
@@ -23,11 +23,19 @@ function AdminArticles() {
   const save = async e => {
     e.preventDefault();
     try {
+      const fd = new FormData();
+      fd.append('title', form.title);
+      fd.append('content', form.content);
+      fd.append('category', form.category);
+      fd.append('tags', form.tags || '');
+      fd.append('is_published', form.is_published ? '1' : '0');
+      if (form.image_url) fd.append('image_url', form.image_url);
+      if (form.imageFile) fd.append('image', form.imageFile);
       if (editing) {
-        await api.put('/api/articles/' + editing, form);
+        await api.put('/api/articles/' + editing, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
         setMsg('✅ تم تعديل المقال');
       } else {
-        await api.post('/api/articles', form);
+        await api.post('/api/articles', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
         setMsg('✅ تم إضافة المقال');
       }
       setForm(EMPTY); setEditing(null); setShowForm(false); load();
@@ -41,7 +49,7 @@ function AdminArticles() {
   };
 
   const edit = a => {
-    setForm({ title: a.title, content: a.content, category: a.category || 'awareness', tags: a.tags || '', is_published: !!a.is_published });
+    setForm({ title: a.title, content: a.content, category: a.category || 'awareness', tags: a.tags || '', image_url: a.image_url || '', imageFile: null, is_published: !!a.is_published });
     setEditing(a.article_id);
     setShowForm(true);
   };
@@ -69,6 +77,30 @@ function AdminArticles() {
           <div className="form-group mt-3">
             <label>المحتوى *</label>
             <textarea className="form-control" rows={6} value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} required />
+          </div>
+                    <div className="form-group mt-3">
+            <label>صورة المقال (اختياري)</label>
+            <div className="d-flex gap-2 align-items-center mb-2">
+              <input
+                type="file"
+                accept="image/*"
+                className="form-control"
+                onChange={e => setForm({ ...form, imageFile: e.target.files[0] || null, image_url: '' })}
+              />
+              <span style={{color:'#999',fontSize:13,whiteSpace:'nowrap'}}>أو</span>
+              <input
+                className="form-control"
+                value={form.image_url}
+                onChange={e => setForm({ ...form, image_url: e.target.value, imageFile: null })}
+                placeholder="رابط صورة مباشر..."
+              />
+            </div>
+            {form.imageFile && (
+              <div style={{fontSize:13,color:'#555',marginBottom:4}}>سيتم رفع: {form.imageFile.name}</div>
+            )}
+            {form.image_url && !form.imageFile && (
+              <img src={form.image_url} alt="معاينة" style={{ marginTop: 4, maxHeight: 120, borderRadius: 6, border: '1px solid #ddd' }} onError={e => e.target.style.display='none'} />
+            )}
           </div>
           <div className="row mt-3">
             <div className="col-md-6">

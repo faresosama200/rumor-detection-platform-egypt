@@ -1,88 +1,108 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import Login           from './Login';
-import Register        from './Register';
-import AdminDashboard  from './AdminDashboard';
-import AIChat          from './AIChat';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import Login               from './Login';
+import Register            from './Register';
+import AdminDashboard      from './AdminDashboard';
+import AIChat              from './AIChat';
 import AdvancedAIDetection from './AdvancedAIDetection';
-import ArticlesPage    from './ArticlesData';
-import VideoAwareness  from './VideoAwareness';
-import AdminArticles   from './AdminArticles';
-import ReportPage      from './ReportPage';
+import ArticlesPage        from './ArticlesData';
+import HomePage            from './HomePage';
+import VideoAwareness      from './VideoAwareness';
+import AdminArticles       from './AdminArticles';
+import ReportPage          from './ReportPage';
+import AdminReports        from './AdminReports';
+import AdminUsers          from './AdminUsers';
+import MinistriesPage      from './MinistriesPage';
+import Sidebar             from './Sidebar';
+import { useAuth }         from './auth';
+import AppIcon             from './AppIcon';
 import './styles.css';
 
-function App() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const token          = localStorage.getItem('token');
-  const role           = localStorage.getItem('role');
-  const isAuthenticated = !!token;
-  const isAdmin         = role === 'admin';
-  const close           = () => setMenuOpen(false);
+function AppLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, loading, logout }     = useAuth();
+  const navigate                      = useNavigate();
+  const location                      = useLocation();
 
-  const logout = () => { localStorage.clear(); window.location.href = '/login'; };
+  const isAuth  = !!user?.token;
+  const isAdmin = user?.role === 'admin';
+  const hideNav = location.pathname === '/login' || location.pathname === '/register';
+
+  if (loading) return (
+    <div className="splash-screen">
+      <div className="splash-logo"><AppIcon name="shield" size={56} /></div>
+      <p>منصة مكافحة الشائعات</p>
+    </div>
+  );
 
   return (
-    <Router>
-      <div className="app-wrapper">
-        <header className="app-header">
-          <div className="header-container">
-            <div className="logo-section">
-              <span className="logo-icon">🛡️</span>
-              <div className="logo-text">
-                <h1>منصة مكافحة الشائعات</h1>
-                <p>حروب الجيل الرابع - مصر</p>
+    <div className="app-root">
+      {/* Header */}
+      <header className="top-bar">
+        <div className="top-bar-inner">
+          <div className="top-bar-start">
+            {!hideNav && (
+              <button className="menu-toggle" onClick={() => setSidebarOpen(o => !o)} aria-label="القائمة">
+                <AppIcon name={sidebarOpen ? 'close' : 'menu'} size={18} />
+              </button>
+            )}
+            <div className="brand" onClick={() => navigate('/home')}>
+              <span className="brand-icon"><AppIcon name="shield" size={26} /></span>
+              <div className="brand-text">
+                <span className="brand-name">منصة مكافحة الشائعات</span>
+                <span className="brand-tag">حروب الجيل الرابع — مصر</span>
               </div>
             </div>
-
-            <button className="hamburger-btn" onClick={() => setMenuOpen(o => !o)} aria-label="القائمة">
-              <span>{menuOpen ? '✕' : '☰'}</span>
-            </button>
-
-            <nav className={`main-nav${menuOpen ? ' nav-open' : ''}`}>
-              {isAuthenticated ? (
-                <>
-                  <NavLink to="/report"   className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} onClick={close}>📢 إبلاغ</NavLink>
-                  <NavLink to="/articles" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} onClick={close}>📰 مقالات</NavLink>
-                  <NavLink to="/ai-detect" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} onClick={close}>🔍 تحقق AI</NavLink>
-                  <NavLink to="/ai-chat"  className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} onClick={close}>🤖 دردشة AI</NavLink>
-                  <NavLink to="/videos"   className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} onClick={close}>🎬 فيديوهات</NavLink>
-                  {isAdmin && <NavLink to="/admin"          className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} onClick={close}>⚙️ لوحة التحكم</NavLink>}
-                  {isAdmin && <NavLink to="/admin-articles" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} onClick={close}>📝 المقالات</NavLink>}
-                  <button className="nav-link logout-btn" onClick={() => { logout(); close(); }}>🚪 خروج</button>
-                </>
-              ) : (
-                <>
-                  <NavLink to="/login"    className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} onClick={close}>🔐 دخول</NavLink>
-                  <NavLink to="/register" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} onClick={close}>📝 تسجيل</NavLink>
-                </>
-              )}
-            </nav>
           </div>
-          {menuOpen && <div className="nav-overlay" onClick={close} />}
-        </header>
+          {isAdmin ? (
+            <div className="top-bar-end">
+              <span className="user-chip">
+                <span className="user-chip-icon"><AppIcon name={isAdmin ? 'crown' : 'user'} size={14} /></span>
+                {user.name || 'مستخدم'}
+              </span>
+              <button className="btn-logout" onClick={logout}>خروج</button>
+            </div>
+          ) : (
+            <div className="top-bar-end">
+              <button className="btn-admin-login" onClick={() => navigate('/login')}>دخول المشرف</button>
+            </div>
+          )}
+        </div>
+      </header>
 
-        <main className="app-main">
+      {/* Body */}
+      <div className="body-wrap">
+        {!hideNav && (
+          <Sidebar isAdmin={isAdmin} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        )}
+        <main className="content-area">
           <Routes>
-            <Route path="/"               element={<Navigate to={isAuthenticated ? '/report' : '/login'} replace />} />
-            <Route path="/login"          element={!isAuthenticated ? <Login />    : <Navigate to="/report" replace />} />
-            <Route path="/register"       element={!isAuthenticated ? <Register /> : <Navigate to="/report" replace />} />
-            <Route path="/report"         element={isAuthenticated  ? <ReportPage />         : <Navigate to="/login" replace />} />
-            <Route path="/ai-detect"      element={isAuthenticated  ? <AdvancedAIDetection /> : <Navigate to="/login" replace />} />
-            <Route path="/ai-chat"        element={isAuthenticated  ? <AIChat />              : <Navigate to="/login" replace />} />
-            <Route path="/articles"       element={isAuthenticated  ? <ArticlesPage />        : <Navigate to="/login" replace />} />
-            <Route path="/videos"         element={isAuthenticated  ? <VideoAwareness />      : <Navigate to="/login" replace />} />
-            <Route path="/admin"          element={isAdmin ? <AdminDashboard />  : <Navigate to="/" replace />} />
-            <Route path="/admin-articles" element={isAdmin ? <AdminArticles />   : <Navigate to="/" replace />} />
+            <Route path="/"               element={<Navigate to="/home" replace />} />
+            <Route path="/home"           element={<HomePage />} />
+            <Route path="/login"          element={<Login />} />
+            <Route path="/register"       element={<Register />} />
+            <Route path="/report"         element={<ReportPage />} />
+            <Route path="/ai-detect"      element={<AdvancedAIDetection />} />
+            <Route path="/ai-chat"        element={<AIChat />} />
+            <Route path="/articles"       element={<ArticlesPage />} />
+            <Route path="/videos"         element={<VideoAwareness />} />
+            <Route path="/ministries"     element={<MinistriesPage />} />
+            <Route path="/admin"          element={isAdmin ? <AdminDashboard />      : <Navigate to="/" replace />} />
+            <Route path="/admin-articles" element={isAdmin ? <AdminArticles />       : <Navigate to="/" replace />} />
+            <Route path="/admin-reports"  element={isAdmin ? <AdminReports />        : <Navigate to="/" replace />} />
+            <Route path="/admin-users"    element={isAdmin ? <AdminUsers />          : <Navigate to="/" replace />} />
             <Route path="*"               element={<Navigate to="/" replace />} />
           </Routes>
         </main>
-
-        <footer className="app-footer">
-          <p>© 2024 منصة مكافحة الشائعات | حروب الجيل الرابع - مصر</p>
-        </footer>
       </div>
-    </Router>
+
+      <footer className="site-footer">
+        <p>© 2025 منصة مكافحة الشائعات | حروب الجيل الرابع — جمهورية مصر العربية</p>
+      </footer>
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  return <Router><AppLayout /></Router>;
+}
