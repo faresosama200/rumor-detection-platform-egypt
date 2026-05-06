@@ -315,16 +315,14 @@ export default function HomePage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
 
             {/* Donut Chart — حالة البلاغات */}
-            {stats.totalReports > 0 && (
-              <div style={{ background: '#fff', borderRadius: 14, padding: '20px 16px', border: '1px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.06)', textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, fontSize: 16, color: '#1a2a4a', marginBottom: 14, textAlign: 'right' }}>حالة البلاغات</div>
-                <DonutChart
-                  pending={stats.pendingReports || 0}
-                  trueVal={stats.trueReports || 0}
-                  falseVal={stats.falseReports || 0}
-                />
-              </div>
-            )}
+            <div style={{ background: '#fff', borderRadius: 14, padding: '20px 16px', border: '1px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.06)', textAlign: 'center' }}>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#1a2a4a', marginBottom: 14, textAlign: 'right' }}>حالة البلاغات</div>
+              <DonutChart
+                pending={stats.pendingReports || 0}
+                trueVal={stats.trueReports || 0}
+                falseVal={stats.falseReports || 0}
+              />
+            </div>
 
             {/* Bar Chart — نشاط المنصة */}
             <div style={{ background: '#fff', borderRadius: 14, padding: '20px 16px', border: '1px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
