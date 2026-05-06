@@ -119,12 +119,20 @@ export default function HomePage() {
   const isAdmin = localStorage.getItem('role') === 'admin';
 
   const openOfficialEntity = (entity) => {
-    if (entity.route) {
-      navigate(entity.route);
-      return;
-    }
-    if (entity.url) {
-      window.open(entity.url, '_blank', 'noopener,noreferrer');
+    try {
+      if (entity?.route) {
+        navigate(entity.route);
+        return;
+      }
+      if (entity?.url) {
+        const win = window.open(entity.url, '_blank', 'noopener,noreferrer');
+        if (!win) {
+          alert('تعذر فتح الرابط. يرجى التحقق من إعدادات المتصفح');
+        }
+      }
+    } catch (error) {
+      console.error('خطأ في فتح الرابط:', error);
+      alert('حدث خطأ في فتح الرابط');
     }
   };
 
