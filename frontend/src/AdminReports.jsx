@@ -28,13 +28,25 @@ export default function AdminReports() {
   const [msg,      setMsg]      = useState(null);
   const [search,   setSearch]   = useState('');
 
+  const normalizeReports = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.reports)) return payload.reports;
+    if (Array.isArray(payload?.data?.reports)) return payload.data.reports;
+    if (Array.isArray(payload?.items)) return payload.items;
+    return [];
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const url = '/api/reports' + (filter !== 'all' ? `?status=${filter}` : '');
       const r = await api.get(url);
-      setReports(r.data?.reports || r.data || []);
-    } catch { setReports([]); }
+      setReports(normalizeReports(r.data));
+      setMsg(null);
+    } catch (ex) {
+      setReports([]);
+      setMsg({ type: 'error', text: ex.response?.data?.message || 'تعذر تحميل البلاغات حالياً' });
+    }
     setLoading(false);
   }, [filter]);
 

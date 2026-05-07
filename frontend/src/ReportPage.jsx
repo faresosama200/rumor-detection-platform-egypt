@@ -3,9 +3,14 @@ import AppIcon from './AppIcon';
 import api from './api';
 
 const STATUS_INFO = {
-  pending: { label: 'قيد المراجعة', color: '#f59e0b', bg: 'rgba(245,158,11,.1)' },
-  true:    { label: 'تم التحقق — صحيح', color: '#22c55e', bg: 'rgba(34,197,94,.1)' },
-  false:   { label: 'مضلل / شائعة',     color: '#ef4444', bg: 'rgba(239,68,68,.1)' },
+  pending:       { label: 'قيد المراجعة', color: '#f59e0b', bg: 'rgba(245,158,11,.1)' },
+  investigating: { label: 'جاري التحقق', color: '#3b82f6', bg: 'rgba(59,130,246,.1)' },
+  fact:          { label: 'حقيقة', color: '#22c55e', bg: 'rgba(34,197,94,.1)' },
+  true:          { label: 'تم التحقق — صحيح', color: '#22c55e', bg: 'rgba(34,197,94,.1)' },
+  partial:       { label: 'صحيح جزئياً', color: '#a855f7', bg: 'rgba(168,85,247,.1)' },
+  rumor:         { label: 'إشاعة', color: '#ef4444', bg: 'rgba(239,68,68,.1)' },
+  misleading:    { label: 'مضلل', color: '#f97316', bg: 'rgba(249,115,22,.1)' },
+  false:         { label: 'مضلل / شائعة', color: '#ef4444', bg: 'rgba(239,68,68,.1)' },
 };
 
 export default function ReportPage() {
@@ -20,8 +25,11 @@ export default function ReportPage() {
   const [open,    setOpen]    = useState(null);
 
   useEffect(() => {
-    if (tab === 'mine' && hasToken) loadMyReports();
-  }, [tab]);
+    if (!(tab === 'mine' && hasToken)) return;
+    loadMyReports();
+    const id = setInterval(() => loadMyReports(), 10000);
+    return () => clearInterval(id);
+  }, [tab, hasToken]);
 
   const loadMyReports = async () => {
     setRLoading(true);

@@ -8,7 +8,7 @@ const RUMOR = [
   { label: 'تحقق AI', value: 'awareness' },
 ];
 
-export default function Sidebar({ isAdmin, isOpen, onClose }) {
+export default function Sidebar({ isAdmin, canModerateReports, isOpen, onClose }) {
   const [eduOpen, setEduOpen] = useState(true);
   const [rumorOpen, setRumorOpen] = useState(false);
   const navigate  = useNavigate();
@@ -69,14 +69,14 @@ export default function Sidebar({ isAdmin, isOpen, onClose }) {
           <SbLink to="/videos"      icon="video" label="الفيديوهات" onClick={onClose} />
           <SbLink to="/ministries"  icon="ministry" label="الجهات الرسمية" onClick={onClose} />
 
-          {isAdmin && (
+          {canModerateReports && (
             <>
               <div className="sb-divider" />
               <p className="sb-section">إدارة المنصة</p>
               <SbLink to="/admin"          icon="admin" label="لوحة التحكم" onClick={onClose} />
               <SbLink to="/admin-reports"  icon="report" label="إدارة البلاغات" onClick={onClose} />
-              <SbLink to="/admin-users"    icon="users" label="إدارة المستخدمين" onClick={onClose} />
-              <SbLink to="/admin-articles" icon="articles" label="إدارة المقالات" onClick={onClose} />
+              {isAdmin && <SbLink to="/admin-users"    icon="users" label="إدارة المستخدمين" onClick={onClose} />}
+              {isAdmin && <SbLink to="/admin-articles" icon="articles" label="إدارة المقالات" onClick={onClose} />}
             </>
           )}
         </nav>

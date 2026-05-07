@@ -27,6 +27,7 @@ function AppLayout() {
 
   const isAuth  = !!user?.token;
   const isAdmin = user?.role === 'admin';
+  const canModerateReports = ['admin', 'reviewer'].includes(user?.role);
   const hideNav = location.pathname === '/login' || location.pathname === '/register';
 
   if (loading) return (
@@ -55,10 +56,10 @@ function AppLayout() {
               </div>
             </div>
           </div>
-          {isAdmin ? (
+          {canModerateReports ? (
             <div className="top-bar-end">
               <span className="user-chip">
-                <span className="user-chip-icon"><AppIcon name={isAdmin ? 'crown' : 'user'} size={14} /></span>
+                <span className="user-chip-icon"><AppIcon name={isAdmin ? 'crown' : 'verify'} size={14} /></span>
                 {user.name || 'مستخدم'}
               </span>
               <button className="btn-logout" onClick={logout}>خروج</button>
@@ -74,7 +75,12 @@ function AppLayout() {
       {/* Body */}
       <div className="body-wrap">
         {!hideNav && (
-          <Sidebar isAdmin={isAdmin} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <Sidebar
+            isAdmin={isAdmin}
+            canModerateReports={canModerateReports}
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+          />
         )}
         <main className="content-area">
           <Routes>
@@ -89,9 +95,9 @@ function AppLayout() {
             <Route path="/articles"       element={<ArticlesPage />} />
             <Route path="/videos"         element={<VideoAwareness />} />
             <Route path="/ministries"     element={<MinistriesPage />} />
-            <Route path="/admin"          element={isAdmin ? <AdminDashboard />      : <Navigate to="/" replace />} />
+            <Route path="/admin"          element={canModerateReports ? <AdminDashboard /> : <Navigate to="/" replace />} />
             <Route path="/admin-articles" element={isAdmin ? <AdminArticles />       : <Navigate to="/" replace />} />
-            <Route path="/admin-reports"  element={isAdmin ? <AdminReports />        : <Navigate to="/" replace />} />
+            <Route path="/admin-reports"  element={canModerateReports ? <AdminReports /> : <Navigate to="/" replace />} />
             <Route path="/admin-users"    element={isAdmin ? <AdminUsers />          : <Navigate to="/" replace />} />
             <Route path="*"               element={<Navigate to="/" replace />} />
           </Routes>

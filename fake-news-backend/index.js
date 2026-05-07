@@ -470,6 +470,13 @@ const admin = (req, res, next) => {
   return next();
 };
 
+const reportModerator = (req, res, next) => {
+  if (!['admin', 'reviewer'].includes(req.user?.role)) {
+    return res.status(403).json({ message: 'يتطلب صلاحية المدير أو المراجع' });
+  }
+  return next();
+};
+
 const ensureFieldInterviewsTable = async () => {
   await q(`CREATE TABLE IF NOT EXISTS field_interviews (
     interview_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -533,17 +540,29 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/reports', auth, async (req, res) => {
   try {
     const { status, category, page = 1, limit = 50 } = req.query;
-    const isAdmin = req.user?.role === 'admin';
-    let sql = 'SELECT r.*, u.name as user_name, u.email as user_email FROM reports r LEFT JOIN users u ON r.user_id=u.user_id WHERE 1=1';
+    const canSeeAllReports = ['admin', 'reviewer'].includes(req.user?.role);
+    const pageNum = Math.max(1, Number.parseInt(page, 10) || 1);
+    const limitNum = Math.min(200, Math.max(1, Number.parseInt(limit, 10) || 50));
+    const offsetNum = (pageNum - 1) * limitNum;
+
+    const where = ['1=1'];
     const p = [];
-    if (!isAdmin) { sql += ' AND r.user_id=?'; p.push(req.user.userId); }
-    if (status)   { sql += ' AND r.status=?';   p.push(status); }
-    if (category) { sql += ' AND r.category=?'; p.push(category); }
-    sql += ' ORDER BY r.created_at DESC LIMIT ? OFFSET ?';
-    p.push(parseInt(limit), (parseInt(page)-1)*parseInt(limit));
-    const rows = await q(sql, p);
-    const countSql = isAdmin ? 'SELECT COUNT(*) as total FROM reports' : 'SELECT COUNT(*) as total FROM reports WHERE user_id=?';
-    const [[{total}]] = [await q(countSql, isAdmin ? [] : [req.user.userId])];
+    if (!canSeeAllReports) { where.push('r.user_id=?'); p.push(req.user.userId); }
+    if (status)   { where.push('r.status=?'); p.push(status); }
+    if (category) { where.push('r.category=?'); p.push(category); }
+
+    const whereSql = where.join(' AND ');
+    const rowsSql = `SELECT r.*, u.name as user_name, u.email as user_email
+                     FROM reports r
+                     LEFT JOIN users u ON r.user_id=u.user_id
+                     WHERE ${whereSql}
+                     ORDER BY r.created_at DESC
+                     LIMIT ${limitNum} OFFSET ${offsetNum}`;
+    const rows = await q(rowsSql, p);
+
+    const countSql = `SELECT COUNT(*) as total FROM reports r WHERE ${whereSql}`;
+    const countRows = await q(countSql, p);
+    const total = Number(countRows?.[0]?.total || 0);
     res.json({ reports: rows, total });
   } catch (e) { res.status(500).json({ message: 'خطأ', error: e.message }); }
 });
@@ -576,7 +595,7 @@ app.get('/api/reports/:id', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ message: 'خطأ', error: e.message }); }
 });
 
-app.put('/api/reports/:id', auth, admin, async (req, res) => {
+app.put('/api/reports/:id', auth, reportModerator, async (req, res) => {
   try {
     const { status, admin_notes } = req.body;
     if (!status) return res.status(400).json({ message: 'الحالة مطلوبة' });
@@ -1039,7 +1058,7 @@ app.post('/api/articles/sync-real', auth, admin, async (_req, res) => {
 });
 
 // ─── Admin Dashboard ──────────────────────────────────────────
-app.get('/api/dashboard', auth, admin, async (_req, res) => {
+app.get('/api/dashboard', auth, reportModerator, async (_req, res) => {
   try {
     const statsStartAt = await getStatsStartAt();
     const safeCount = async (sql, params = []) => {
